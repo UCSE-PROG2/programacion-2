@@ -563,7 +563,7 @@ Divide una aplicación en capas independientes donde cada capa se comunica con l
 
 **Ejemplo:** una aplicación de comercio electrónico dividida en capa de presentación, capa de lógica empresarial y capa de almacenamiento de datos.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/01-arquitectura-en-capas/`](patrones-arquitectura/01-arquitectura-en-capas/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/01-arquitectura-en-capas/`](001c-patrones-arquitectura/01-arquitectura-en-capas/)
 
 ---
 
@@ -573,7 +573,7 @@ Se utiliza para diseñar aplicaciones distribuidas en las que el **servidor prop
 
 **Ejemplo:** una aplicación web donde el servidor provee los datos y el cliente los consume a través de un navegador.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/02-cliente-servidor/`](patrones-arquitectura/02-cliente-servidor/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/02-cliente-servidor/`](001c-patrones-arquitectura/02-cliente-servidor/)
 
 ---
 
@@ -589,7 +589,7 @@ Separa la lógica empresarial de la interfaz de usuario y la gestión de datos.
 
 **Usado en:** aplicaciones web y de escritorio.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/03-mvc/`](patrones-arquitectura/03-mvc/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/03-mvc/`](001c-patrones-arquitectura/03-mvc/)
 
 ---
 
@@ -601,7 +601,7 @@ Similar al MVC, pero el **presentador** actúa como intermediario entre la vista
 
 **Usado en:** aplicaciones de escritorio.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/04-mvp/`](patrones-arquitectura/04-mvp/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/04-mvp/`](001c-patrones-arquitectura/04-mvp/)
 
 ---
 
@@ -611,7 +611,7 @@ Similar al MVP, pero el **ViewModel** actúa como intermediario y utiliza *data 
 
 **Usado en:** aplicaciones de escritorio y móviles.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/05-mvvm/`](patrones-arquitectura/05-mvvm/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/05-mvvm/`](001c-patrones-arquitectura/05-mvvm/)
 
 ---
 
@@ -625,7 +625,7 @@ Producers → Message Bus → Consumers
 
 **Usado en:** aplicaciones de alta escalabilidad.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/06-pub-sub/`](patrones-arquitectura/06-pub-sub/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/06-pub-sub/`](001c-patrones-arquitectura/06-pub-sub/)
 
 ---
 
@@ -637,7 +637,7 @@ Los componentes se exponen como **servicios independientes** y se comunican a tr
 - Comunicación simple y estandarizada
 - Interfaz estándar con protocolos como **SOAP** o **REST**
 
-**Ejemplo en el repo:** [`patrones-arquitectura/07-soa/`](patrones-arquitectura/07-soa/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/07-soa/`](001c-patrones-arquitectura/07-soa/)
 
 ---
 
@@ -652,7 +652,7 @@ Los componentes se comunican mediante **eventos**. Emiten eventos cuando ocurren
 Event Producers → Event Ingestion → Event Consumers
 ```
 
-**Ejemplo en el repo:** [`patrones-arquitectura/08-orientada-eventos/`](patrones-arquitectura/08-orientada-eventos/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/08-orientada-eventos/`](001c-patrones-arquitectura/08-orientada-eventos/)
 
 ---
 
@@ -660,7 +660,7 @@ Event Producers → Event Ingestion → Event Consumers
 
 Se construyen aplicaciones a partir de **componentes reutilizables y autónomos**. Cada componente es una unidad independiente que se puede ensamblar en una aplicación más grande, definido por sus **interfaces**.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/09-basada-componentes/`](patrones-arquitectura/09-basada-componentes/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/09-basada-componentes/`](001c-patrones-arquitectura/09-basada-componentes/)
 
 ---
 
@@ -675,7 +675,7 @@ stage 1 → stage 2 → stage 3a → stage 4
                   → stage 3b ↗           (nonlinear pipeline)
 ```
 
-**Ejemplo en el repo:** [`patrones-arquitectura/10-pipeline/`](patrones-arquitectura/10-pipeline/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/10-pipeline/`](001c-patrones-arquitectura/10-pipeline/)
 
 ---
 
@@ -687,7 +687,7 @@ Divide una aplicación en **pequeños servicios independientes y escalables**. C
 
 **Ejemplo:** una banca en línea dividida en servicios de autenticación, transferencias y pagos.
 
-**Ejemplo en el repo:** [`patrones-arquitectura/11-microservicios/`](patrones-arquitectura/11-microservicios/)
+**Ejemplo en el repo:** [`001c-patrones-arquitectura/11-microservicios/`](001c-patrones-arquitectura/11-microservicios/)
 
 ---
 
@@ -729,13 +729,13 @@ Se enfocan en **cómo se crean los objetos**. En lugar de instanciar objetos dir
 
 | Patrón | Descripción |
 |--------|-------------|
-| **Factory Method** | Define una interfaz para crear un objeto, pero deja que las subclases decidan qué clase instanciar |
-| **Abstract Factory** | Produce familias de objetos relacionados sin especificar sus clases concretas |
-| **Builder** | Permite construir objetos complejos paso a paso |
-| **Prototype** | Permite copiar objetos existentes sin que el código dependa de sus clases |
-| **Singleton** | Garantiza que una clase tenga una sola instancia y proporciona un punto de acceso global |
+| [**Factory Method**](https://refactoring.guru/es/design-patterns/factory-method) | Define una interfaz para crear un objeto, pero deja que las subclases decidan qué clase instanciar |
+| [**Abstract Factory**](https://refactoring.guru/es/design-patterns/abstract-factory) | Produce familias de objetos relacionados sin especificar sus clases concretas |
+| [**Builder**](https://refactoring.guru/es/design-patterns/builder) | Permite construir objetos complejos paso a paso |
+| [**Prototype**](https://refactoring.guru/es/design-patterns/prototype) | Permite copiar objetos existentes sin que el código dependa de sus clases |
+| [**Singleton**](https://refactoring.guru/es/design-patterns/singleton) | Garantiza que una clase tenga una sola instancia y proporciona un punto de acceso global |
 
-**Ejemplos en el repo:** [`patrones-diseno/01-creacionales/`](patrones-diseno/01-creacionales/)
+**Ejemplos en el repo:** [`001d-patrones-diseno/01-creacionales/`](001d-patrones-diseno/01-creacionales/)
 
 ---
 
@@ -756,15 +756,15 @@ Se enfocan en **cómo se organizan y combinan las clases y objetos**. Permiten c
 
 | Patrón | Descripción |
 |--------|-------------|
-| **Adapter** | Permite la colaboración entre objetos con interfaces incompatibles |
-| **Bridge** | Divide una clase grande en dos jerarquías separadas (abstracción e implementación) que pueden desarrollarse independientemente |
-| **Composite** | Permite componer objetos en estructuras de árbol y trabajar con esas estructuras como si fueran objetos individuales |
-| **Decorator** | Permite añadir funcionalidades a objetos colocándolos dentro de objetos encapsuladores especiales |
-| **Facade** | Proporciona una interfaz simplificada a una biblioteca, framework o grupo complejo de clases |
-| **Flyweight** | Permite mantener más objetos en RAM compartiendo partes comunes del estado entre ellos |
-| **Proxy** | Proporciona un sustituto de otro objeto para controlar el acceso a él |
+| [**Adapter**](https://refactoring.guru/es/design-patterns/adapter) | Permite la colaboración entre objetos con interfaces incompatibles |
+| [**Bridge**](https://refactoring.guru/es/design-patterns/bridge) | Divide una clase grande en dos jerarquías separadas (abstracción e implementación) que pueden desarrollarse independientemente |
+| [**Composite**](https://refactoring.guru/es/design-patterns/composite) | Permite componer objetos en estructuras de árbol y trabajar con esas estructuras como si fueran objetos individuales |
+| [**Decorator**](https://refactoring.guru/es/design-patterns/decorator) | Permite añadir funcionalidades a objetos colocándolos dentro de objetos encapsuladores especiales |
+| [**Facade**](https://refactoring.guru/es/design-patterns/facade) | Proporciona una interfaz simplificada a una biblioteca, framework o grupo complejo de clases |
+| [**Flyweight**](https://refactoring.guru/es/design-patterns/flyweight) | Permite mantener más objetos en RAM compartiendo partes comunes del estado entre ellos |
+| [**Proxy**](https://refactoring.guru/es/design-patterns/proxy) | Proporciona un sustituto de otro objeto para controlar el acceso a él |
 
-**Ejemplos en el repo:** [`patrones-diseno/02-estructurales/`](patrones-diseno/02-estructurales/)
+**Ejemplos en el repo:** [`001d-patrones-diseno/02-estructurales/`](001d-patrones-diseno/02-estructurales/)
 
 ---
 
@@ -785,18 +785,18 @@ Se enfocan en **cómo interactúan y se comunican los objetos**. Definen respons
 
 | Patrón | Descripción |
 |--------|-------------|
-| **Chain of Responsibility** | Permite pasar solicitudes a lo largo de una cadena de manejadores |
-| **Command** | Convierte una solicitud en un objeto independiente que contiene toda la información sobre dicha solicitud |
-| **Iterator** | Permite recorrer elementos de una colección sin exponer su representación subyacente |
-| **Mediator** | Reduce las dependencias caóticas entre objetos mediante un objeto mediador |
-| **Memento** | Permite guardar y restaurar el estado previo de un objeto sin revelar los detalles de su implementación |
-| **Observer** | Define un mecanismo de suscripción para notificar a múltiples objetos sobre eventos |
-| **State** | Permite a un objeto alterar su comportamiento cuando su estado interno cambia |
-| **Strategy** | Permite definir una familia de algoritmos, encapsular cada uno y hacerlos intercambiables |
-| **Template Method** | Define el esqueleto de un algoritmo en la superclase pero permite que las subclases sobreescriban pasos específicos |
-| **Visitor** | Permite separar algoritmos de los objetos sobre los que operan |
+| [**Chain of Responsibility**](https://refactoring.guru/es/design-patterns/chain-of-responsibility) | Permite pasar solicitudes a lo largo de una cadena de manejadores |
+| [**Command**](https://refactoring.guru/es/design-patterns/command) | Convierte una solicitud en un objeto independiente que contiene toda la información sobre dicha solicitud |
+| [**Iterator**](https://refactoring.guru/es/design-patterns/iterator) | Permite recorrer elementos de una colección sin exponer su representación subyacente |
+| [**Mediator**](https://refactoring.guru/es/design-patterns/mediator) | Reduce las dependencias caóticas entre objetos mediante un objeto mediador |
+| [**Memento**](https://refactoring.guru/es/design-patterns/memento) | Permite guardar y restaurar el estado previo de un objeto sin revelar los detalles de su implementación |
+| [**Observer**](https://refactoring.guru/es/design-patterns/observer) | Define un mecanismo de suscripción para notificar a múltiples objetos sobre eventos |
+| [**State**](https://refactoring.guru/es/design-patterns/state) | Permite a un objeto alterar su comportamiento cuando su estado interno cambia |
+| [**Strategy**](https://refactoring.guru/es/design-patterns/strategy) | Permite definir una familia de algoritmos, encapsular cada uno y hacerlos intercambiables |
+| [**Template Method**](https://refactoring.guru/es/design-patterns/template-method) | Define el esqueleto de un algoritmo en la superclase pero permite que las subclases sobreescriban pasos específicos |
+| [**Visitor**](https://refactoring.guru/es/design-patterns/visitor) | Permite separar algoritmos de los objetos sobre los que operan |
 
-**Ejemplos en el repo:** [`patrones-diseno/03-comportamiento/`](patrones-diseno/03-comportamiento/)
+**Ejemplos en el repo:** [`001d-patrones-diseno/03-comportamiento/`](001d-patrones-diseno/03-comportamiento/)
 
 ---
 
@@ -812,10 +812,10 @@ Para ver detalles de implementación de cada patrón de diseño con ejemplos en 
 
 | Carpeta | Descripción |
 |---------|-------------|
-| [`patrones-arquitectura/`](patrones-arquitectura/) | 11 patrones de arquitectura con ejemplos y guías de implementación |
-| [`patrones-diseno/`](patrones-diseno/) | 23 patrones de diseño (creacionales, estructurales y de comportamiento) con ejemplos |
-| [`001-ejercicios-java/`](001-ejercicios-java/) | Ejercicios introductorios de Java |
-| [`001-ejercicios-gestores/`](001-ejercicios-gestores/) | Ejercicios de Maven y Gradle |
-| [`001-ejercicio-patrones/`](001-ejercicio-patrones/) | Ejercicio integrador de patrones de diseño |
+| [`001c-patrones-arquitectura/`](001c-patrones-arquitectura/) | 11 patrones de arquitectura con ejemplos y guías de implementación |
+| [`001d-patrones-diseno/`](001d-patrones-diseno/) | 23 patrones de diseño (creacionales, estructurales y de comportamiento) con ejemplos |
+| [`001a-ejercicios-java/`](001a-ejercicios-java/) | Ejercicios introductorios de Java |
+| [`001b-ejercicios-gestores/`](001b-ejercicios-gestores/) | Ejercicios de Maven y Gradle |
+| [`001e-ejercicio-patrones/`](001e-ejercicio-patrones/) | Ejercicio integrador de patrones de diseño |
 
 Cada subcarpeta contiene ejemplos distintos y un `README.md` que indica qué archivos implementar en cada caso.
