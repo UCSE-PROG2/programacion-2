@@ -1,0 +1,5 @@
+/*
+ * Archivo de configuración raíz de Gradle.
+ * Define el nombre del proyecto, que aparecerá en el IDE y en los reportes de build.
+ */
+rootProject.name = 'tienda-online-patrones'

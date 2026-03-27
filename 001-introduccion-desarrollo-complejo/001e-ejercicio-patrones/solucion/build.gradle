@@ -1,0 +1,59 @@
+/*
+ * Archivo de configuración de Gradle (Groovy DSL).
+ *
+ * Este archivo define cómo se construye el proyecto:
+ *   - Se usa el plugin 'java' para compilar código Java.
+ *   - Se usa el plugin 'application' para poder ejecutar el proyecto
+ *     con la tarea `gradle run`, que invoca la clase Main.
+ *
+ * Para ejecutar el proyecto desde la terminal:
+ *   ./gradlew run
+ *
+ * Para compilar sin ejecutar:
+ *   ./gradlew build
+ */
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'edu.ucse'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+/*
+ * Dependencias externas del proyecto:
+ *
+ *   javafaker: genera datos aleatorios y realistas (nombres, direcciones, emails, etc.)
+ *     Uso: en Main.java para poblar datos de prueba sin valores hardcodeados.
+ *     Repo: https://github.com/DiUS/java-faker
+ *
+ *   slf4j-api: API de logging estándar de Java. Las clases del sistema llaman a
+ *     métodos de esta API (logger.info, logger.debug, etc.) sin atarse a
+ *     ninguna implementación concreta.
+ *
+ *   logback-classic: implementación concreta de SLF4J. Se configura en
+ *     src/main/resources/logback.xml para definir el formato y destino de los logs.
+ *     Al estar en classpath, SLF4J la detecta automáticamente en tiempo de ejecución.
+ */
+dependencies {
+    implementation 'com.github.javafaker:javafaker:1.0.2'
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    runtimeOnly    'ch.qos.logback:logback-classic:1.4.14'
+}
+
+/*
+ * Configura la clase principal del plugin 'application'.
+ * Gradle buscará el método main() en esta clase cuando se ejecute `gradle run`.
+ */
+application {
+    mainClass = 'presentacion.Main'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}

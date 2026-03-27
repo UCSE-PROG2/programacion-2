@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuración de Logback — implementación concreta de SLF4J.
+
+  Logback busca este archivo automáticamente en el classpath (src/main/resources/).
+  Si no lo encuentra, usa una configuración mínima por defecto.
+
+  Conceptos clave para entender esta configuración:
+
+    APPENDER: define DÓNDE y CÓMO se escriben los logs.
+      En este caso usamos ConsoleAppender (escribe en la consola/terminal).
+      Otros appenders disponibles: FileAppender, RollingFileAppender, etc.
+
+    ENCODER / PATTERN: define el FORMATO de cada línea de log.
+      Los tokens de conversión disponibles son:
+        %d{HH:mm:ss.SSS}  → timestamp con hora:minuto:segundo.milisegundo
+        %-5level           → nivel del log (INFO, DEBUG, WARN, ERROR) alineado en 5 chars
+        %logger{0}         → nombre simple de la clase que generó el log (sin paquete)
+        %msg               → el mensaje del log
+        %n                 → salto de línea
+
+      %highlight(...)      → colorea según nivel: ERROR=rojo, WARN=amarillo, INFO=verde, DEBUG=azul
+      %cyan(...)           → aplica color cian al texto envuelto
+
+    ROOT LEVEL: nivel mínimo de logs que se procesan.
+      DEBUG → muestra todos los niveles (DEBUG, INFO, WARN, ERROR)
+      INFO  → muestra INFO, WARN, ERROR (oculta DEBUG)
+      WARN  → muestra solo WARN y ERROR
+
+  Para ver solo INFO y arriba (ocultar DEBUG) cambiar a: <root level="INFO">
+-->
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--
+              Formato de línea de log:
+                12:34:56.789 INFO  [ShoppingCart    ] — Mensaje del log
+
+              %highlight aplica colores automáticos según nivel de severidad.
+              %cyan aplica color cian al nombre de la clase.
+              %-20logger{0} reserva 20 caracteres para el nombre de clase, alineado a la izquierda.
+            -->
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%-20logger{0})] — %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!--
+      Logger específico para la capa de lógica de negocio (paquete logica.*).
+      Nivel DEBUG para ver todos los detalles del flujo interno de cada patrón.
+    -->
+    <logger name="logica" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!--
+      Logger para la capa de presentación (Main.java).
+      Nivel INFO — solo mensajes de alto nivel sobre el flujo de la aplicación.
+    -->
+    <logger name="presentacion" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!--
+      Nivel raíz para el resto del sistema (librerías externas, datos, etc.).
+      WARN para no ver logs internos de javafaker o logback.
+    -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
