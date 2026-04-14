@@ -1,4 +1,4 @@
-# Unidad 4 - Desarrollo de aplicaciones con bases de datos relacionales
+# Unidad 2 - Desarrollo de aplicaciones con bases de datos relacionales
 
 ## Índice
 
