@@ -132,14 +132,21 @@ flowchart LR
     end
 
     subgraph Servidor
-        C[("🗄️ Motor MySQL\nadministra tablas y datos")]
+        subgraph Docker
+            C[("🗄️ Motor MySQL")]
+        end
+        subgraph Laragon
+            D[("🗄️ Motor MySQL")]
+        end
     end
 
-    A -- "consultas SQL\npuerto 3306" --> C
+    A -- "puerto 3306" --> C
+    A -- "puerto 3306" --> D
     B -- "JDBC / Hibernate\npuerto 3306" --> C
+    B -- "JDBC / Hibernate\npuerto 3306" --> D
 ```
 
-> El motor corre en segundo plano (dentro de Docker o Laragon) y los clientes se conectan a él a través del puerto `3306`. Puede haber múltiples clientes conectados al mismo tiempo.
+> El motor corre en segundo plano (dentro de Docker o Laragon) y los clientes se conectan a él a través del puerto `3306`. Puede haber múltiples clientes conectados al mismo tiempo. Solo se usa **una** de las dos opciones de servidor.
 
 ### Levantar MySQL con Docker
 
