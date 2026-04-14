@@ -60,7 +60,7 @@ En el contexto de esta unidad, Docker permite tener MySQL funcionando en minutos
      wsl --install
      ```
    - Reiniciar la PC si lo solicita.
-3. Descargar **Docker Desktop** desde [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
+3. Descargar **Docker Desktop** desde [docs.docker.com/desktop/setup/install/windows-install](https://docs.docker.com/desktop/setup/install/windows-install/).
 4. Ejecutar el instalador y seguir los pasos (dejar marcada la opción "Use WSL 2 instead of Hyper-V").
 5. Al finalizar, iniciar Docker Desktop desde el menú de inicio. El ícono de la ballena en la barra de tareas indica que está corriendo.
 6. Verificar la instalación abriendo una terminal (CMD o PowerShell) y ejecutando:
