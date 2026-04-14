@@ -1,50 +1,94 @@
 package org.example;
 
-import org.example.dao.UserDAO;
 import org.example.model.User;
 
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
 
+    private static final String URL  = "jdbc:mysql://localhost:3306/ejemplo_app?serverTimezone=UTC";
+    private static final String USER = "root";
+    private static final String PASS = "123456";
+
     public static void main(String[] args) {
-        UserDAO dao = new UserDAO();
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASS)) {
 
-        // --- CREAR ---
-        System.out.println("=== CREAR ===");
-        User u1 = new User("Ana García", true);
-        User u2 = new User("Carlos López", false);
-        User u3 = new User("Laura Martínez", true);
-        dao.save(u1);
-        dao.save(u2);
-        dao.save(u3);
-        System.out.println("Guardado: " + u1);
-        System.out.println("Guardado: " + u2);
-        System.out.println("Guardado: " + u3);
+            crearTabla(conn);
 
-        // --- LISTAR ---
-        System.out.println("\n=== LISTAR TODOS ===");
-        List<User> users = dao.findAll();
-        users.forEach(System.out::println);
+            // INSERT
+            System.out.println("=== INSERT ===");
+            insertar(conn, "Ana García",     true);
+            insertar(conn, "Carlos López",   false);
+            insertar(conn, "Laura Martínez", true);
 
-        // --- BUSCAR POR ID ---
-        System.out.println("\n=== BUSCAR POR ID ===");
-        User encontrado = dao.findById(u1.getId());
-        System.out.println("Encontrado: " + encontrado);
+            // SELECT
+            System.out.println("\n=== SELECT todos ===");
+            listar(conn).forEach(System.out::println);
 
-        // --- ACTUALIZAR ---
-        System.out.println("\n=== ACTUALIZAR ===");
-        u1.setActive(false);
-        dao.update(u1);
-        System.out.println("Después de actualizar: " + dao.findById(u1.getId()));
+            // UPDATE
+            System.out.println("\n=== UPDATE (desactivar id=1) ===");
+            actualizar(conn, 1, false);
+            listar(conn).forEach(System.out::println);
 
-        // --- ELIMINAR ---
-        System.out.println("\n=== ELIMINAR ===");
-        dao.delete(u2);
-        System.out.println("Eliminado: " + u2);
+            // DELETE
+            System.out.println("\n=== DELETE (eliminar id=2) ===");
+            eliminar(conn, 2);
+            listar(conn).forEach(System.out::println);
 
-        // --- LISTA FINAL ---
-        System.out.println("\n=== LISTA FINAL ===");
-        dao.findAll().forEach(System.out::println);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static void crearTabla(Connection conn) throws SQLException {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS users (
+                id     INT PRIMARY KEY AUTO_INCREMENT,
+                name   VARCHAR(45) NOT NULL,
+                active BIT NOT NULL
+            )
+            """;
+        conn.createStatement().executeUpdate(sql);
+    }
+
+    static void insertar(Connection conn, String name, boolean active) throws SQLException {
+        String sql = "INSERT INTO users (name, active) VALUES (?, ?)";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setString(1, name);
+        stmt.setBoolean(2, active);
+        int filas = stmt.executeUpdate();
+        System.out.println(filas + " fila insertada: " + name);
+    }
+
+    static void actualizar(Connection conn, int id, boolean active) throws SQLException {
+        String sql = "UPDATE users SET active = ? WHERE id = ?";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setBoolean(1, active);
+        stmt.setInt(2, id);
+        int filas = stmt.executeUpdate();
+        System.out.println(filas + " fila actualizada");
+    }
+
+    static void eliminar(Connection conn, int id) throws SQLException {
+        String sql = "DELETE FROM users WHERE id = ?";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setInt(1, id);
+        int filas = stmt.executeUpdate();
+        System.out.println(filas + " fila eliminada");
+    }
+
+    static List<User> listar(Connection conn) throws SQLException {
+        List<User> usuarios = new ArrayList<>();
+        ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM users");
+        while (rs.next()) {
+            usuarios.add(new User(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getBoolean("active")
+            ));
+        }
+        return usuarios;
     }
 }
