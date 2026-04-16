@@ -21,7 +21,7 @@ public class UserService {
     // El Service conoce al Repository, pero no al revés.
     // Esta dirección de dependencia (Service → Repository) es intencional:
     // cada capa solo conoce a la capa inmediatamente inferior.
-    private final Repository repository = new Repository();
+    private final Repository repository = Repository.getInstance();
 
     // Registrar un usuario: valida los datos antes de persistir.
     // El Repository no valida nada; esa responsabilidad es del Service.

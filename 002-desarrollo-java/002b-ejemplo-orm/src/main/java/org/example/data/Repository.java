@@ -5,10 +5,14 @@ import org.hibernate.Session;
 import java.util.List;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CAPA DE DATOS — Repository
+// CAPA DE DATOS — Repository (patrón Singleton)
 //
 // El Repository concentra todas las operaciones de acceso a la base de datos
 // de la aplicación en un único archivo.
+//
+// Se implementa como Singleton para garantizar que exista una sola instancia
+// durante toda la ejecución. Esto evita crear múltiples objetos innecesarios
+// y es consistente con el ciclo de vida de la SessionFactory.
 //
 // Por qué un archivo por entidad en proyectos reales:
 //   En aplicaciones con muchas entidades (Alumno, Materia, Inscripción, etc.)
@@ -20,6 +24,18 @@ import java.util.List;
 // solo llama a los métodos de este Repository.
 // ─────────────────────────────────────────────────────────────────────────────
 public class Repository {
+
+    // Única instancia de la clase. Es static para que pertenezca a la clase,
+    // no a ningún objeto en particular.
+    private static final Repository INSTANCE = new Repository();
+
+    // Constructor privado: impide que otras clases creen instancias con new Repository().
+    private Repository() {}
+
+    // Método de acceso global a la única instancia.
+    public static Repository getInstance() {
+        return INSTANCE;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // User
