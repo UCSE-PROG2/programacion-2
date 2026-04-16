@@ -483,12 +483,12 @@ Se crea dentro de la carpeta `resources/`:
     <session-factory>
 
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/ejemplo_orm?serverTimezone=UTC</property>
+        <!-- createDatabaseIfNotExist=true: el driver crea el schema si no existe -->
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/ejemplo_orm?serverTimezone=UTC&amp;createDatabaseIfNotExist=true</property>
         <property name="hibernate.connection.username">root</property>
         <property name="hibernate.connection.password">123456</property>
 
-        <!-- MySQLDialect autodetecta la versión del servidor (MySQL8Dialect fue eliminado en H7) -->
-        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+        <!-- El dialecto se autodetecta en Hibernate 7; no hace falta especificarlo -->
 
         <!-- Controla qué hace Hibernate con las tablas al iniciar:
              create-drop → recrea las tablas al arrancar y las elimina al cerrar (demos)

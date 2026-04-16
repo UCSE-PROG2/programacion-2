@@ -17,20 +17,12 @@
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
 
         <!-- URL de conexión. Formato: jdbc:mysql://host:puerto/nombre_schema
-             El schema "ejemplo_orm" debe existir en MySQL antes de ejecutar.
-             serverTimezone=UTC evita advertencias de zona horaria. -->
-        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/ejemplo_orm?serverTimezone=UTC</property>
+             serverTimezone=UTC evita advertencias de zona horaria.
+             createDatabaseIfNotExist=true: el driver crea el schema si no existe. -->
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/ejemplo_orm?serverTimezone=UTC&amp;createDatabaseIfNotExist=true</property>
 
         <property name="hibernate.connection.username">root</property>
         <property name="hibernate.connection.password">123456</property>
-
-        <!-- ── Dialecto ───────────────────────────────────────────────────── -->
-
-        <!-- El dialecto le indica a Hibernate qué "sabor" de SQL debe generar.
-             Cada motor de BD tiene variaciones en su sintaxis (tipos de datos,
-             paginación, funciones). MySQL8Dialect genera SQL optimizado para MySQL 8. -->
-        <!-- MySQLDialect autodetecta la versión del servidor; MySQL8Dialect fue eliminado en H7 -->
-        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
 
         <!-- ── Gestión del esquema ────────────────────────────────────────── -->
 
