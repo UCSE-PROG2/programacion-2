@@ -15,8 +15,9 @@
 4. [ORM - Object Relational Mapping](#4-orm---object-relational-mapping)
 5. [JPA y Hibernate](#5-jpa-y-hibernate)
 6. [Relaciones entre entidades](#6-relaciones-entre-entidades)
-7. [Pruebas unitarias con H2](#7-pruebas-unitarias-con-h2)
-8. [Conceptos avanzados clave](#8-conceptos-avanzados-clave)
+7. [Consultas avanzadas con CriteriaBuilder](#7-consultas-avanzadas-con-criteriabuilder)
+8. [Pruebas unitarias con H2](#8-pruebas-unitarias-con-h2)
+9. [Conceptos avanzados clave](#9-conceptos-avanzados-clave)
 
 ---
 
@@ -782,7 +783,245 @@ public class EntidadSecundaria {
 
 ---
 
-## 7. Pruebas unitarias con H2
+## 7. Consultas avanzadas con CriteriaBuilder
+
+La sección 5.5 introdujo el uso básico de `CriteriaBuilder`. Esta sección cubre todas las formas de filtrar datos: comparaciones simples, búsquedas parciales, rangos, valores nulos, listas, filtros combinados, filtros opcionales y consultas sobre tablas relacionadas.
+
+### Estructura base
+
+Toda consulta con `CriteriaBuilder` sigue el mismo esquema dentro de una sesión:
+
+```java
+CriteriaBuilder cb   = session.getCriteriaBuilder();
+CriteriaQuery<T> cq  = cb.createQuery(T.class);
+Root<T> root         = cq.from(T.class);
+
+// ... armar predicados ...
+
+cq.select(root).where(/* predicado */);
+return session.createQuery(cq).getResultList();
+```
+
+- **`CriteriaBuilder`**: fábrica de predicados y expresiones
+- **`CriteriaQuery`**: representa la consulta completa
+- **`Root`**: punto de partida para referenciar campos de la entidad
+
+---
+
+### 7.1 Filtros de igualdad y desigualdad
+
+```java
+// campo == valor
+cb.equal(root.get("activo"), true)
+
+// campo != valor
+cb.notEqual(root.get("estado"), "CANCELADO")
+```
+
+---
+
+### 7.2 Comparaciones numéricas y de fechas
+
+```java
+// campo > valor  (greaterThan)
+cb.greaterThan(root.get("salario"), 50000.0)
+
+// campo >= valor  (greaterThanOrEqualTo)
+cb.greaterThanOrEqualTo(root.get("edad"), 18)
+
+// campo < valor  (lessThan)
+cb.lessThan(root.get("stock"), 10)
+
+// campo <= valor  (lessThanOrEqualTo)
+cb.lessThanOrEqualTo(root.get("precio"), 999.99)
+
+// campo BETWEEN min AND max
+cb.between(root.get("fecha"), LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31))
+```
+
+---
+
+### 7.3 Búsqueda parcial de texto (LIKE)
+
+```java
+// contiene la cadena (LIKE '%valor%')
+cb.like(root.get("nombre"), "%" + valor + "%")
+
+// empieza con (LIKE 'valor%')
+cb.like(root.get("nombre"), valor + "%")
+
+// termina con (LIKE '%valor')
+cb.like(root.get("nombre"), "%" + valor)
+
+// case-insensitive: convertir ambos lados a minúsculas
+cb.like(cb.lower(root.get("nombre")), "%" + valor.toLowerCase() + "%")
+```
+
+---
+
+### 7.4 Valores nulos
+
+```java
+// campo IS NULL
+cb.isNull(root.get("fechaBaja"))
+
+// campo IS NOT NULL
+cb.isNotNull(root.get("fechaBaja"))
+```
+
+---
+
+### 7.5 Listas de valores (IN)
+
+```java
+// campo IN (v1, v2, v3)
+root.get("estado").in("ACTIVO", "PENDIENTE")
+
+// equivalente explícito con CriteriaBuilder
+cb.in(root.get("estado")).value("ACTIVO").value("PENDIENTE")
+
+// NOT IN
+cb.not(root.get("estado").in("CANCELADO", "RECHAZADO"))
+```
+
+---
+
+### 7.6 Combinación de predicados (AND / OR / NOT)
+
+Los predicados se combinan para formar condiciones compuestas:
+
+```java
+Predicate activo   = cb.equal(root.get("activo"), true);
+Predicate sinStock = cb.lessThan(root.get("stock"), 5);
+
+// AND: ambas condiciones deben cumplirse
+cq.where(cb.and(activo, sinStock));
+
+// OR: al menos una condición debe cumplirse
+cq.where(cb.or(activo, sinStock));
+
+// NOT: niega un predicado
+cq.where(cb.not(activo));
+
+// Combinación anidada: activo AND (stock < 5 OR precio > 1000)
+Predicate precioCaro = cb.greaterThan(root.get("precio"), 1000.0);
+cq.where(cb.and(activo, cb.or(sinStock, precioCaro)));
+```
+
+---
+
+### 7.7 Filtros opcionales (dinámicos)
+
+Cuando no todos los filtros están siempre presentes (por ejemplo, una búsqueda con parámetros opcionales), se construye la lista de predicados en tiempo de ejecución:
+
+```java
+public List<Producto> buscar(String nombre, Double precioMax, Boolean soloActivos) {
+    try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+        CriteriaBuilder cb  = session.getCriteriaBuilder();
+        CriteriaQuery<Producto> cq = cb.createQuery(Producto.class);
+        Root<Producto> root = cq.from(Producto.class);
+
+        List<Predicate> predicados = new ArrayList<>();
+
+        if (nombre != null && !nombre.isBlank()) {
+            predicados.add(cb.like(cb.lower(root.get("nombre")), "%" + nombre.toLowerCase() + "%"));
+        }
+        if (precioMax != null) {
+            predicados.add(cb.lessThanOrEqualTo(root.get("precio"), precioMax));
+        }
+        if (soloActivos != null && soloActivos) {
+            predicados.add(cb.equal(root.get("activo"), true));
+        }
+
+        // Si no hay filtros, trae todo; si hay, aplica el AND de todos
+        cq.select(root).where(cb.and(predicados.toArray(new Predicate[0])));
+
+        return session.createQuery(cq).getResultList();
+    }
+}
+```
+
+> La clave está en acumular predicados en una `List<Predicate>` y aplicar `cb.and(...)` al final. Si la lista está vacía, `cb.and()` no agrega restricciones y la consulta trae todos los registros.
+
+---
+
+### 7.8 Filtros en tablas relacionadas (Join)
+
+Cuando se necesita filtrar por un campo de una entidad relacionada, se usa un `Join`. Requiere que la relación esté mapeada con `@ManyToOne`, `@OneToMany` u otra anotación.
+
+**Ejemplo**: filtrar `Pedido` por el nombre del cliente (entidad relacionada):
+
+```java
+// Entidades relacionadas:
+// Pedido @ManyToOne→ Cliente (campo "cliente", tiene campo "nombre")
+
+public List<Pedido> buscarPorNombreCliente(String nombreCliente) {
+    try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+
+        CriteriaBuilder cb = session.getCriteriaBuilder();
+        CriteriaQuery<Pedido> cq = cb.createQuery(Pedido.class);
+        Root<Pedido> pedidoRoot = cq.from(Pedido.class);
+
+        // JOIN hacia la tabla Cliente
+        Join<Pedido, Cliente> clienteJoin = pedidoRoot.join("cliente");
+
+        // Filtrar por campo de la entidad relacionada
+        Predicate filtro = cb.like(clienteJoin.get("nombre"), "%" + nombreCliente + "%");
+
+        cq.select(pedidoRoot).where(filtro);
+        return session.createQuery(cq).getResultList();
+    }
+}
+```
+
+**Tipos de JOIN disponibles:**
+
+| Tipo | Método | Equivalente SQL |
+|------|--------|----------------|
+| INNER JOIN (default) | `root.join("campo")` | Solo registros con relación |
+| LEFT JOIN | `root.join("campo", JoinType.LEFT)` | Incluye registros sin relación |
+| RIGHT JOIN | `root.join("campo", JoinType.RIGHT)` | Incluye todos los del lado derecho |
+
+**JOIN con múltiples niveles** (navegar por más de una relación):
+
+```java
+// Pedido → Cliente → Ciudad
+Root<Pedido> pedidoRoot = cq.from(Pedido.class);
+Join<Pedido, Cliente> clienteJoin = pedidoRoot.join("cliente");
+Join<Cliente, Ciudad> ciudadJoin  = clienteJoin.join("ciudad");
+
+Predicate filtroCiudad = cb.equal(ciudadJoin.get("nombre"), "Córdoba");
+cq.select(pedidoRoot).where(filtroCiudad);
+```
+
+---
+
+### 7.9 Ordenamiento y límite de resultados
+
+```java
+// ORDER BY campo ASC
+cq.orderBy(cb.asc(root.get("nombre")));
+
+// ORDER BY campo DESC
+cq.orderBy(cb.desc(root.get("fecha")));
+
+// ORDER BY múltiples campos
+cq.orderBy(cb.asc(root.get("apellido")), cb.desc(root.get("salario")));
+
+// Limitar resultados (equivalente a LIMIT)
+session.createQuery(cq).setMaxResults(10).getResultList();
+
+// Paginación (LIMIT + OFFSET)
+session.createQuery(cq)
+    .setFirstResult(20)   // saltar los primeros 20
+    .setMaxResults(10)    // traer los próximos 10
+    .getResultList();
+```
+
+---
+
+## 8. Pruebas unitarias con H2
 
 ### ¿Por qué H2?
 
@@ -859,7 +1098,7 @@ public class UserDAOTest {
 
 ---
 
-## 8. Conceptos avanzados clave
+## 9. Conceptos avanzados clave
 
 ### FetchType: LAZY vs EAGER
 
