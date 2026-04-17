@@ -33,7 +33,7 @@
                update      → agrega columnas nuevas, no borra datos existentes.
                validate    → verifica que las tablas coincidan con las entidades.
                none        → no toca el esquema (usar en producción). -->
-        <property name="hibernate.hbm2ddl.auto">update</property>
+        <property name="hibernate.hbm2ddl.auto">none</property>
 
         <!-- ── Logging de SQL ─────────────────────────────────────────────── -->
 
