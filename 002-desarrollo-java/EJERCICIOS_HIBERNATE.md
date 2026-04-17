@@ -22,12 +22,14 @@ Implementar:
 - `ProductoRepository.java` — Singleton con los siguientes métodos:
   - `guardar` — INSERT: persiste un nuevo producto en la base de datos
   - `listarTodos` — SELECT sin filtros: trae todos los registros de la tabla
-  - `listarConBajoStock(int limite)` — SELECT con filtro `<=` sobre el campo `stock`: trae solo los productos cuyo stock sea menor o igual al límite recibido
-  - `listarActivos` — SELECT con filtro de igualdad (`=`) sobre el campo booleano `activo`: trae solo los que están activos
+  - `listarConBajoStock(int limite)` — SELECT con filtro `<=` sobre el campo `stock`
+  - `listarActivos` — SELECT con filtro de igualdad (`=`) sobre el campo booleano `activo`
+  - `buscarActivosConPrecioMenorA(double precioMax)` — SELECT con dos filtros combinados con **AND**: `activo = true` AND `precio <= precioMax`
+  - `buscarBaratosOSinStock(double precioMax, int stockMin)` — SELECT con dos filtros combinados con **OR**: `precio <= precioMax` OR `stock <= stockMin`
 - `ProductoService.java` — con los siguientes métodos:
   - `registrar` — llama al repository para insertar; el campo `activo` siempre arranca en `true`
-  - `calcularValorTotalInventario` — no hace consulta extra: itera la lista de activos y acumula `precio * stock` en memoria
-  - `reporteBajoStock(int limite)` — delega al repository la búsqueda filtrada y muestra el resultado por pantalla
+  - `reporteBajoStock(int limite)` — delega al repository la búsqueda con `<=` y muestra el resultado por pantalla
+  - `buscarOfertasOCriticos(double precioMax, int stockMin)` — llama al método OR del repository y lista los resultados
 
 ### Script SQL
 
@@ -56,11 +58,12 @@ Implementar:
   - `guardar` — INSERT: persiste un nuevo turno; `confirmado` arranca en `false`
   - `buscarPorMedico(String medico)` — SELECT con filtro de igualdad (`=`) sobre el campo `medico`
   - `buscarPorFecha(LocalDate fecha)` — SELECT con filtro de igualdad (`=`) sobre el campo `fecha`
-  - `contarConfirmadosPorMedico(String medico)` — SELECT con `COUNT` y dos filtros combinados con `AND`: igualdad en `medico` y igualdad en `confirmado = true`; devuelve un `Long`
+  - `buscarConfirmadosDeMedico(String medico)` — SELECT con dos filtros combinados con **AND**: `medico = X` AND `confirmado = true`
+  - `buscarPorMedicoOFecha(String medico, LocalDate fecha)` — SELECT con dos filtros combinados con **OR**: `medico = X` OR `fecha = Y`
 - `TurnoService.java` — con los siguientes métodos:
   - `reservar` — llama al repository para insertar el turno
-  - `mostrarTurnosDel(String medico)` — busca por médico y además consulta cuántos están confirmados para mostrarlo en el encabezado
-  - `mostrarTurnosDeFecha(LocalDate fecha)` — busca por fecha y lista los resultados por pantalla
+  - `mostrarConfirmadosDe(String medico)` — usa el método AND del repository y lista los turnos confirmados de ese médico
+  - `mostrarTurnosDeMedicoOFecha(String medico, LocalDate fecha)` — usa el método OR del repository y lista los resultados
 
 ### Script SQL
 
@@ -86,11 +89,13 @@ Implementar:
 - `EmpleadoRepository.java` — Singleton con los siguientes métodos:
   - `guardar` — INSERT: persiste un nuevo empleado; `fechaIngreso` se setea con la fecha actual
   - `listarTodos` — SELECT sin filtros: trae todos los empleados
-  - `listarConSalarioMayorA(Double minimo)` — SELECT con filtro `>` sobre el campo `salario`, ordenado de mayor a menor (`ORDER BY salario DESC`)
-  - `calcularPromedioDeSalarios` — SELECT con función de agregación `AVG` sobre `salario`; devuelve un `Double`
+  - `listarConSalarioMayorA(double minimo)` — SELECT con filtro `>` sobre el campo `salario`, ordenado de mayor a menor
+  - `buscarPorRangoDeSalario(double min, double max)` — SELECT con dos filtros combinados con **AND**: `salario >= min` AND `salario <= max`
+  - `buscarIngresadosRecientesOConAltoSalario(LocalDate desde, double salarioMin)` — SELECT con dos filtros combinados con **OR**: `fechaIngreso >= desde` OR `salario >= salarioMin`
 - `EmpleadoService.java` — con los siguientes métodos:
   - `contratar` — llama al repository para insertar el empleado
-  - `reporteSalarial` — primero consulta el promedio, luego reutiliza `listarConSalarioMayorA` pasando ese promedio como filtro para mostrar quiénes están por encima
+  - `buscarEnBandaSalarial(double min, double max)` — usa el método AND del repository y lista los empleados dentro del rango
+  - `buscarDestacadosORecientes(LocalDate desde, double salarioMin)` — usa el método OR del repository y lista los resultados
 
 ### Script SQL
 
@@ -119,11 +124,13 @@ Implementar:
   - `listarDisponibles` — SELECT con filtro de igualdad (`=`) sobre el campo booleano `disponible`
   - `buscarPorId(Long id)` — SELECT por clave primaria usando `session.get()`; devuelve `null` si no existe
   - `actualizarDisponibilidad(Long id, boolean disponible)` — UPDATE: busca el libro por id dentro de la misma transacción y modifica el campo `disponible`, luego hace `merge`
+  - `buscarDisponiblesDeAutor(String autor)` — SELECT con dos filtros combinados con **AND**: `disponible = true` AND `autor = X`
+  - `buscarDisponiblesODeAutor(String autor)` — SELECT con dos filtros combinados con **OR**: `disponible = true` OR `autor = X`
 - `LibroService.java` — con los siguientes métodos:
   - `agregar` — llama al repository para insertar el libro
   - `prestar(Long id)` — primero busca por id; si no existe o ya está prestado, muestra un mensaje y corta; si está disponible, llama a `actualizarDisponibilidad` con `false`
-  - `mostrarDisponibles` — delega al repository y lista por pantalla
-  - `buscarPorAutor` — delega al repository y lista por pantalla, mostrando si cada libro está disponible o prestado
+  - `buscarDisponiblesDeAutor(String autor)` — usa el método AND del repository (libros disponibles de ese autor puntualmente)
+  - `buscarCatalogoDeAutor(String autor)` — usa el método OR del repository (libros disponibles en general más todos los del autor, estén o no prestados)
 
 ### Script SQL
 
@@ -149,12 +156,12 @@ Implementar:
 - `VentaRepository.java` — Singleton con los siguientes métodos:
   - `guardar` — INSERT: persiste una nueva venta; `fecha` se setea con la fecha actual
   - `buscarPorFecha(LocalDate fecha)` — SELECT con filtro de igualdad (`=`) sobre el campo `fecha`
-  - `totalRecaudadoEnFecha(LocalDate fecha)` — SELECT con función de agregación `SUM` sobre `total` y filtro de igualdad en `fecha`; devuelve `Double` (puede ser `null` si no hay ventas)
-  - `rankingDeProductos` — SELECT con `GROUP BY producto` y `SUM(total)` como acumulado, ordenado de mayor a menor por ese acumulado; devuelve una lista de `Object[]` donde cada fila tiene el nombre del producto y el total acumulado
+  - `buscarPorFechaYProducto(LocalDate fecha, String producto)` — SELECT con dos filtros combinados con **AND**: `fecha = X` AND `producto = Y`
+  - `buscarVentasGrandesORecientes(double totalMin, LocalDate desde)` — SELECT con dos filtros combinados con **OR**: `total >= totalMin` OR `fecha >= desde`
 - `VentaService.java` — con los siguientes métodos:
   - `registrar` — calcula `total = cantidad * precioUnitario` en el servicio antes de insertar; el repository no recibe el precio unitario, solo la entidad ya armada
-  - `resumenDelDia` — consulta ventas de hoy y el total recaudado del día, y los muestra por pantalla
-  - `rankingProductos` — delega al repository y muestra la lista ordenada con posición, nombre y total acumulado
+  - `buscarVentasDelDiaDe(String producto)` — usa el método AND del repository con la fecha de hoy y el producto recibido
+  - `buscarVentasDestacadas(double totalMin, LocalDate desde)` — usa el método OR del repository y lista los resultados
 
 ### Script SQL
 
@@ -209,9 +216,8 @@ public class Main {
                     int stock = sc.nextInt();
                     sc.nextLine();
                     productos.registrar(nombre, precio, stock);
-                    System.out.printf("Valor total del inventario: $%.2f%n",
-                        productos.calcularValorTotalInventario());
                     productos.reporteBajoStock(5);
+                    productos.buscarOfertasOCriticos(500.0, 3);
                 }
                 case 2 -> {
                     TurnoService turnos = new TurnoService();
@@ -222,8 +228,8 @@ public class Main {
                     System.out.print("Fecha del turno (YYYY-MM-DD): ");
                     LocalDate fecha = LocalDate.parse(sc.nextLine());
                     turnos.reservar(paciente, medico, fecha);
-                    turnos.mostrarTurnosDel(medico);
-                    turnos.mostrarTurnosDeFecha(LocalDate.now());
+                    turnos.mostrarConfirmadosDe(medico);
+                    turnos.mostrarTurnosDeMedicoOFecha(medico, LocalDate.now());
                 }
                 case 3 -> {
                     EmpleadoService empleados = new EmpleadoService();
@@ -235,7 +241,8 @@ public class Main {
                     double salario = sc.nextDouble();
                     sc.nextLine();
                     empleados.contratar(nombre, apellido, salario);
-                    empleados.reporteSalarial();
+                    empleados.buscarEnBandaSalarial(50000, 150000);
+                    empleados.buscarDestacadosORecientes(LocalDate.now().minusMonths(6), 120000);
                 }
                 case 4 -> {
                     LibroService libros = new LibroService();
@@ -246,8 +253,8 @@ public class Main {
                     System.out.print("Año de publicación: ");
                     int anio = Integer.parseInt(sc.nextLine());
                     libros.agregar(titulo, autor, anio);
-                    libros.mostrarDisponibles();
-                    libros.buscarPorAutor(autor);
+                    libros.buscarDisponiblesDeAutor(autor);
+                    libros.buscarCatalogoDeAutor(autor);
                 }
                 case 5 -> {
                     VentaService ventas = new VentaService();
@@ -259,8 +266,8 @@ public class Main {
                     double precioU = sc.nextDouble();
                     sc.nextLine();
                     ventas.registrar(producto, cantidad, precioU);
-                    ventas.resumenDelDia();
-                    ventas.rankingProductos();
+                    ventas.buscarVentasDelDiaDe(producto);
+                    ventas.buscarVentasDestacadas(1000.0, LocalDate.now().minusDays(7));
                 }
                 case 0 -> salir = true;
                 default -> System.out.println("Opción inválida.");
