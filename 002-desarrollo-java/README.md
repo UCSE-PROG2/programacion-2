@@ -17,7 +17,6 @@
 6. [Relaciones entre entidades](#6-relaciones-entre-entidades)
 7. [Consultas avanzadas con CriteriaBuilder](#7-consultas-avanzadas-con-criteriabuilder)
 8. [Pruebas unitarias con H2](#8-pruebas-unitarias-con-h2)
-9. [Conceptos avanzados clave](#9-conceptos-avanzados-clave)
 
 ---
 
@@ -1116,22 +1115,114 @@ session.createQuery(cq)
 
 ## 8. Pruebas unitarias con H2
 
+### ¿Qué es una prueba unitaria?
+
+Una **prueba unitaria** (o *unit test*) es un fragmento de código que verifica de forma automática que una unidad de funcionalidad —generalmente un método o una clase— se comporta como se espera, de forma aislada del resto del sistema.
+
+El objetivo es detectar errores cuanto antes, sin necesidad de levantar un servidor ni interactuar manualmente con la aplicación. Al automatizar las pruebas, se puede verificar rápidamente que un cambio no rompió algo que antes funcionaba.
+
+**Características de un buen test unitario:**
+
+| Propiedad | Descripción |
+|-----------|-------------|
+| **Aislado** | No depende de la red, de archivos externos ni de otros tests |
+| **Repetible** | Siempre produce el mismo resultado |
+| **Rápido** | Se ejecuta en milisegundos |
+| **Autovalidante** | El propio test determina si pasó o falló, sin intervención humana |
+
+En Java, la biblioteca más usada para tests unitarios es **JUnit**. Cada método anotado con `@Test` es ejecutado automáticamente por el framework y su resultado se reporta como `PASSED` o `FAILED`.
+
+### El problema de testear la capa de datos
+
+La capa DAO interactúa directamente con una base de datos. Si los tests apuntaran a MySQL, necesitaríamos:
+
+- Que MySQL esté corriendo en la máquina de desarrollo y en CI
+- Una base de datos de prueba separada de la de producción
+- Limpiar manualmente los datos entre tests
+
+Esto hace los tests frágiles, lentos y difíciles de mantener. La solución es usar una **base de datos en memoria** solo para tests.
+
+![Por qué no usar una BD compartida para tests](assets/test_db_fail.png)
+
+> **Conclusión**: los tests sobre una BD compartida no son repetibles ni aislados — el resultado de un test depende de lo que otros desarrolladores (o tests anteriores) hayan dejado en la base. Un test que pasa hoy puede fallar mañana sin que nadie haya tocado el código.
+
 ### ¿Por qué H2?
 
-**H2** es una base de datos relacional escrita en Java que se ejecuta como motor embebido. No requiere instalar un servidor separado.
+**H2** es una base de datos relacional escrita en Java que se ejecuta como motor embebido dentro de la misma JVM. No requiere instalar ni levantar ningún servidor externo.
 
 | Característica | Descripción |
 |---------------|-------------|
-| **En memoria** | Los datos se almacenan en RAM, no en disco |
+| **En memoria** | Los datos se almacenan en RAM; desaparecen al terminar el proceso |
 | **Liviana y rápida** | Ideal para tests unitarios |
-| **Compatible con Hibernate** | Funciona con las mismas anotaciones JPA |
-| **Sin estado persistente** | Cada test arranca con la BD limpia |
+| **Compatible con Hibernate** | Funciona con las mismas anotaciones JPA/Jakarta |
+| **Sin estado persistente** | Cada test arranca con la BD vacía y limpia |
 
-> H2 permite ejecutar tests unitarios que simulan el acceso a una BD relacional real, asegurando el correcto funcionamiento sin depender de MySQL.
+> H2 permite ejecutar tests que simulan el acceso a una base de datos relacional real, sin depender de MySQL ni de ningún servidor externo.
+
+### Instalación: dependencias en Gradle
+
+Para usar H2 y JUnit en los tests, agregar las siguientes dependencias en `build.gradle`. La clave es usar `testImplementation` en lugar de `implementation`: Gradle sabe así que son dependencias solo para el entorno de test y no se incluyen en el artefacto final.
+
+```groovy
+dependencies {
+    implementation 'org.hibernate.orm:hibernate-core:6.6.13.Final'
+    implementation 'mysql:mysql-connector-java:8.0.28'
+
+    // Solo disponibles al compilar/ejecutar los tests
+    testImplementation 'com.h2database:h2:2.2.224'
+    testImplementation 'junit:junit:4.13.2'
+}
+```
+
+### Configuración de Hibernate para tests
+
+Los tests necesitan su propio `hibernate.cfg.xml` apuntando a H2 en lugar de MySQL. Este archivo se coloca en `src/test/resources/hibernate.cfg.xml` (Gradle lo toma automáticamente al ejecutar tests sin pisar el de producción en `src/main/resources/`).
+
+```xml
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+        <!-- Conexión a H2 en memoria -->
+        <property name="hibernate.connection.driver_class">org.h2.Driver</property>
+        <property name="hibernate.connection.url">jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1</property>
+        <property name="hibernate.connection.username">sa</property>
+        <property name="hibernate.connection.password"></property>
+
+        <!-- Dialecto H2 -->
+        <property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
+
+        <!-- Crear el esquema automáticamente al inicio y borrarlo al cerrar -->
+        <property name="hibernate.hbm2ddl.auto">create-drop</property>
+
+        <!-- Mostrar SQL generado (útil para depurar) -->
+        <property name="hibernate.show_sql">true</property>
+
+        <!-- Registrar las entidades que se van a testear -->
+        <mapping class="com.example.model.User"/>
+    </session-factory>
+</hibernate-configuration>
+```
+
+> `DB_CLOSE_DELAY=-1` mantiene la base de datos en memoria activa mientras la JVM esté corriendo, evitando que H2 la destruya entre la apertura de dos sesiones distintas.
+
+> `create-drop` le indica a Hibernate que cree todas las tablas al iniciar la `SessionFactory` y las borre al cerrarla. Garantiza que cada ejecución de tests arranca con el esquema limpio.
 
 ### Estructura de un test con Hibernate + H2
 
 ```java
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.junit.*;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
 public class UserDAOTest {
 
     private SessionFactory sessionFactory;
@@ -1141,9 +1232,8 @@ public class UserDAOTest {
 
     @Before
     public void setUp() {
-        // Inicializar Hibernate (apuntando a H2 en el hibernate.cfg.xml de tests)
         Configuration configuration = new Configuration();
-        configuration.configure();
+        configuration.configure(); // lee src/test/resources/hibernate.cfg.xml
 
         sessionFactory = configuration.buildSessionFactory();
         session        = sessionFactory.openSession();
@@ -1154,8 +1244,7 @@ public class UserDAOTest {
 
     @After
     public void tearDown() {
-        // Rollback para no persistir cambios entre tests
-        transaction.rollback();
+        transaction.rollback(); // deshace cambios; la BD queda vacía para el próximo test
         session.close();
         sessionFactory.close();
     }
@@ -1187,77 +1276,30 @@ public class UserDAOTest {
 }
 ```
 
-**Patrón clave**: `@Before` configura el entorno y `@After` hace rollback, garantizando que cada test es independiente.
+**Patrón clave**: `@Before` inicializa Hibernate y abre una transacción antes de cada test; `@After` hace rollback al terminar, garantizando que cada test es completamente independiente del anterior.
 
----
-
-## 9. Conceptos avanzados clave
-
-### FetchType: LAZY vs EAGER
-
-Al acceder a relaciones entre entidades, Hibernate puede cargar los datos relacionados de dos formas:
-
-| Tipo | Comportamiento | Cuándo usar |
-|------|---------------|-------------|
-| `FetchType.LAZY` | Carga los datos relacionados **solo cuando se accede a ellos** | Por defecto en `@OneToMany` y `@ManyToMany`. Usar cuando no siempre se necesita la colección |
-| `FetchType.EAGER` | Carga los datos relacionados **junto con la entidad principal** | Por defecto en `@ManyToOne` y `@OneToOne`. Útil para datos siempre necesarios y de tamaño reducido |
-
-> **Atención con LAZY**: si se accede a la colección fuera de una sesión Hibernate activa, se lanzará una `LazyInitializationException`. Siempre acceder a datos lazy dentro del bloque `try (Session session = ...)`.
-
-> **Nunca usar EAGER para resolver el problema N+1**. La solución correcta es optimizar la consulta (con `JOIN FETCH` o `@EntityGraph`).
-
-```java
-// Cargar la lista de empleados solo cuando se llama a department.getEmployees()
-@OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
-private List<Employee> employees;
-
-// Siempre cargar el departamento junto con el empleado
-@ManyToOne(fetch = FetchType.EAGER)
-private Department department;
-```
-
-> **Regla general**: usar `LAZY` por defecto en colecciones y `EAGER` en relaciones simples de tipo `@ManyToOne`.
-
-### El problema N+1
-
-El problema N+1 ocurre cuando se carga una lista de N entidades y luego se accede a una relación de cada una, generando N consultas adicionales (1 para la lista + N para los relacionados).
-
-**Ejemplo**: al cargar 10 departamentos con `LAZY` y acceder a los empleados de cada uno, Hibernate ejecuta 11 consultas (1 + 10).
-
-**Soluciones recomendadas**:
-
-```java
-// 1. JOIN FETCH en JPQL - carga todo en una sola query SQL
-TypedQuery<Department> query = em.createQuery(
-    "SELECT d FROM Department d JOIN FETCH d.employees", Department.class
-);
-
-// 2. CriteriaBuilder equivalente (en Hibernate Session)
-CriteriaQuery<Department> q = builder.createQuery(Department.class);
-Root<Department> root = q.from(Department.class);
-root.fetch("employees", JoinType.LEFT);
-
-// 3. @EntityGraph (declarativo, sin modificar la query base)
-// @EntityGraph(attributePaths = {"employees"})
-// List<Department> findAll();
-```
-
-> **Regla general**: configurar todas las relaciones como `LAZY` por defecto y optimizar consulta a consulta según las necesidades reales.
-
-### Resumen del flujo completo
+### Ciclo de vida de un test
 
 ```
-Aplicación Java
+JUnit detecta @Test
     ↓
-    DAO (AlumnoDAO)
+Ejecuta @Before → abre Session + Transaction
     ↓
-    HibernateUtil → Session
+Ejecuta el método @Test
     ↓
-    Hibernate ORM (mapea objetos ↔ tablas)
+Ejecuta @After → rollback + cierre de Session
     ↓
-    JDBC Driver (mysql-connector-java)
-    ↓
-    MySQL (en Docker con volumen persistente)
+Reporta PASSED / FAILED
+```
+
+### Ejecutar los tests con Gradle
+
+```bash
+# Ejecutar todos los tests
+./gradlew test
+
+# Ver el reporte HTML con detalle de cada test
+# Resultado en: build/reports/tests/test/index.html
 ```
 
 ---

@@ -13,7 +13,7 @@
 
         <!-- create-drop: recrea las tablas al arrancar y las elimina al cerrar.
              Ideal para demos: cada ejecución arranca con la base de datos limpia. -->
-        <property name="hibernate.hbm2ddl.auto">create-drop</property>
+        <property name="hibernate.hbm2ddl.auto">none</property>
 
         <property name="hibernate.show_sql">true</property>
         <property name="hibernate.format_sql">true</property>
