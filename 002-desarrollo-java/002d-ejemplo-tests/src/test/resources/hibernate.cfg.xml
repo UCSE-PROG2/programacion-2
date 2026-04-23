@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<!--
+    Configuración de Hibernate para TESTS (reemplaza al hibernate.cfg.xml de main).
+
+    Gradle prioriza src/test/resources sobre src/main/resources en el classpath
+    de test. Al ejecutar "./gradlew test", HibernateUtil.configure() encontrará
+    este archivo primero y usará H2 en lugar de MySQL.
+
+    Ventajas de H2 para tests:
+      - No requiere instalar ni levantar ningún servidor externo.
+      - La BD vive en RAM: cada ejecución arranca con tablas limpias.
+      - Compatible con las mismas anotaciones JPA (@Entity, @OneToMany, etc.).
+-->
+<hibernate-configuration>
+    <session-factory>
+
+        <!-- ── Conexión a H2 en memoria ──────────────────────────────────── -->
+
+        <property name="hibernate.connection.driver_class">org.h2.Driver</property>
+
+        <!-- jdbc:h2:mem:testdb  → base de datos en memoria llamada "testdb"
+             DB_CLOSE_DELAY=-1  → mantiene la BD activa mientras corra la JVM.
+                                   Sin esto, H2 la cerraría al cerrar la primera
+                                   conexión y los tests siguientes fallarían. -->
+        <property name="hibernate.connection.url">jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1</property>
+        <property name="hibernate.connection.username">sa</property>
+        <property name="hibernate.connection.password"></property>
+
+        <!-- ── Esquema ───────────────────────────────────────────────────── -->
+
+        <!-- create-drop: Hibernate crea las tablas al construir la SessionFactory
+             y las elimina al cerrarla. Garantiza que cada ejecución de tests
+             empiece con un esquema limpio y sin datos residuales. -->
+        <property name="hibernate.hbm2ddl.auto">create-drop</property>
+
+        <!-- ── Logging ───────────────────────────────────────────────────── -->
+
+        <!-- show_sql=false: se oculta el SQL generado para no ensuciar la salida
+             de los tests. Cambiar a true para depurar consultas específicas. -->
+        <property name="hibernate.show_sql">false</property>
+        <property name="hibernate.format_sql">false</property>
+
+        <property name="hibernate.cache.use_second_level_cache">false</property>
+        <property name="hibernate.cache.use_query_cache">false</property>
+
+        <!-- Las mismas entidades que en producción: el código de test reutiliza
+             las clases @Entity del main sin ninguna modificación. -->
+        <mapping class="org.example.data.Carrera"/>
+        <mapping class="org.example.data.Materia"/>
+        <mapping class="org.example.data.Perfil"/>
+        <mapping class="org.example.data.Alumno"/>
+
+    </session-factory>
+</hibernate-configuration>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+
+        <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/ejemplo_orm_avanzado?serverTimezone=UTC&amp;createDatabaseIfNotExist=true</property>
+        <property name="hibernate.connection.username">root</property>
+        <property name="hibernate.connection.password">123456</property>
+
+        <!-- create-drop: recrea las tablas al arrancar y las elimina al cerrar.
+             Ideal para demos: cada ejecución arranca con la base de datos limpia. -->
+        <property name="hibernate.hbm2ddl.auto">none</property>
+
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+
+        <property name="hibernate.cache.use_second_level_cache">false</property>
+        <property name="hibernate.cache.use_query_cache">false</property>
+
+        <!-- Las cuatro entidades del modelo deben registrarse aquí.
+             Hibernate las analiza para generar el esquema y saber cómo mapearlas. -->
+        <mapping class="org.example.data.Carrera"/>
+        <mapping class="org.example.data.Materia"/>
+        <mapping class="org.example.data.Perfil"/>
+        <mapping class="org.example.data.Alumno"/>
+
+    </session-factory>
+</hibernate-configuration>
