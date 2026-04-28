@@ -1,16 +1,5 @@
 # Unidad 3 — Spring Boot
 
-## Estructura de clases
-
-| Clase | Tipo | Contenido |
-|-------|------|-----------|
-| Jueves 1 | Teoría | ¿Qué es Spring Boot? Arquitectura, anotaciones base |
-| Martes 1 | Práctica | Primer proyecto: REST API simple |
-| Jueves 2 | Teoría | Capas: Controller, Service, Repository. JPA básico |
-| Martes 2 | Práctica | CRUD completo con base de datos H2 |
-| Jueves 3 | Práctica | Validaciones, manejo de errores, ejercicio integrador |
-
----
 
 ## 1. ¿Qué es Spring Boot?
 
