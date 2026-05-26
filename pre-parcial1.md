@@ -20,7 +20,7 @@ No se utilizará base de datos ni ORM. Toda la información se almacenará en **
 
 ## Crear el proyecto
 
-Generar el proyecto desde [Spring Initializr](https://start.spring.io) con las dependencias: **Spring Web**, **Spring Boot Starter Validation** y **Lombok**.
+Generar el proyecto desde [Spring Initializr](https://start.spring.io) con las dependencias: **Spring Web**, **Validation** y **Lombok**.
 
 ---
 
