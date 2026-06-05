@@ -137,16 +137,10 @@ Los tres filtros de `/paquetes` son combinables entre sí: si se envían varios,
 
 ---
 
-## Criterios de evaluación
+## Tests unitarios
 
-| Ítem | Descripción |
-|------|-------------|
-| Repositorio | Repositorio privado creado y colaborador sumado antes de la entrega |
-| Base de datos | Esquema y tabla creados; datos de prueba cargados con el script |
-| Estructura | El proyecto respeta la arquitectura en capas: model, repository, service, controller |
-| Entidad | `Paquete` correctamente mapeada con anotaciones JPA |
-| Filtros | Los tres filtros de búsqueda son opcionales y combinables |
-| Reporte | Agrupa por destino con cantidad de paquetes, cupos totales y precio promedio |
-| Códigos HTTP | 201 al crear, 204 al eliminar, 404 cuando el recurso no existe |
-| Errores | El manejador global captura las excepciones y devuelve respuestas claras |
-| Validaciones | Campos obligatorios validados con anotaciones; errores devuelven 400 |
+Escribir tests unitarios para la capa de servicio (`AgenciaService`) que cubran los distintos escenarios de cada método. La cobertura de líneas del servicio debe ser **igual o superior al 80%**.
+
+- Usar **JUnit 5** y **Mockito** (ya incluidos en el starter de pruebas de Spring Boot).
+- Mockear el repositorio para que los tests no requieran base de datos.
+- Verificar tanto los caminos exitosos como los casos de error (por ejemplo, que se lance la excepción correcta cuando el paquete no existe).

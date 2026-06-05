@@ -1,5 +1,29 @@
 # Unidad 3 — Spring Boot
 
+Material de apoyo para la **Unidad 3** de **Programación 2** - Ingeniería en Computación (UCSE).
+
+---
+
+## Índice
+
+1. [¿Qué es Spring Boot?](#1-qué-es-spring-boot)
+2. [¿Qué es una API REST?](#2-qué-es-una-api-rest)
+3. [Crear un proyecto](#3-crear-un-proyecto)
+4. [Arquitectura en capas](#4-arquitectura-en-capas)
+5. [Controller — Exponiendo una API REST](#5-controller--exponiendo-una-api-rest)
+6. [Entidades y JPA](#6-entidades-y-jpa)
+7. [Repository — Acceso a datos](#7-repository--acceso-a-datos)
+8. [Service — Lógica de negocio](#8-service--lógica-de-negocio)
+9. [CRUD completo — Ejemplo integrado](#9-crud-completo--ejemplo-integrado)
+10. [Configuración — application.properties](#10-configuración--applicationproperties)
+11. [Validaciones](#11-validaciones)
+12. [Manejo de errores](#12-manejo-de-errores)
+13. [Testear la API](#13-testear-la-api)
+14. [Ejercicio integrador](#14-ejercicio-integrador)
+- [Resumen de anotaciones](#resumen-de-anotaciones)
+- [Recursos](#recursos)
+
+---
 
 ## 1. ¿Qué es Spring Boot?
 
@@ -201,7 +225,7 @@ public class EjemploApplication {
 
 ---
 
-## 3. Arquitectura en capas
+## 4. Arquitectura en capas
 
 Spring Boot promueve separar la aplicación en tres capas:
 
@@ -221,7 +245,7 @@ Cada capa tiene una responsabilidad única. El Controller no habla directo con l
 
 ---
 
-## 4. Controller — Exponiendo una API REST
+## 5. Controller — Exponiendo una API REST
 
 Un Controller recibe requests HTTP y devuelve responses.
 
@@ -284,7 +308,7 @@ public ResponseEntity<Producto> crear(@RequestBody Producto producto) {
 
 ---
 
-## 5. Entidades y JPA
+## 6. Entidades y JPA
 
 JPA (Java Persistence API) es el estándar de Java para mapear clases a tablas de base de datos. Spring Boot usa Hibernate como implementación.
 
@@ -317,7 +341,7 @@ public class Producto {
 
 ---
 
-## 6. Repository — Acceso a datos
+## 7. Repository — Acceso a datos
 
 Spring Data JPA provee repositorios que generan las queries automáticamente:
 
@@ -350,7 +374,7 @@ Solo con declarar la interfaz y extender `JpaRepository`, Spring genera:
 
 ---
 
-## 7. Service — Lógica de negocio
+## 8. Service — Lógica de negocio
 
 El Service es donde va la lógica que no es ni HTTP ni base de datos:
 
@@ -457,7 +481,7 @@ public class ProductoService {
 
 ---
 
-## 8. CRUD completo — Ejemplo integrado
+## 9. CRUD completo — Ejemplo integrado
 
 ### Entidad
 
@@ -553,7 +577,7 @@ public class ProductoController {
 
 ---
 
-## 9. Configuración — application.properties
+## 10. Configuración — application.properties
 
 ```properties
 # Puerto del servidor (default: 8080)
@@ -587,7 +611,7 @@ En desarrollo: `create-drop`. En producción: `none` o `validate`.
 
 ---
 
-## 10. Validaciones
+## 11. Validaciones
 
 Agregar la dependencia `spring-boot-starter-validation` permite validar los datos de entrada:
 
@@ -628,7 +652,7 @@ public ResponseEntity<Producto> crear(@Valid @RequestBody Producto producto) {
 
 ---
 
-## 11. Manejo de errores
+## 12. Manejo de errores
 
 Por defecto, si lanza una excepción, Spring devuelve un JSON de error genérico con código 500. Para controlarlo mejor:
 
@@ -656,7 +680,7 @@ public class GlobalExceptionHandler {
 
 ---
 
-## 12. Testear la API
+## 13. Testear la API
 
 ### Con H2 Console
 
@@ -694,7 +718,7 @@ Importar las mismas requests como colección. Es más cómodo para explorar la A
 
 ---
 
-## 13. Ejercicio integrador
+## 14. Ejercicio integrador
 
 Desarrollar una API REST para una **distribuidora de productos**:
 
@@ -766,9 +790,30 @@ public class Categoria {
 
 ---
 
-## Recursos
+## Recursos recomendados
 
-- [Spring Initializr](https://start.spring.io) — generar proyectos
-- [Spring Guides](https://spring.io/guides) — tutoriales oficiales
-- [Spring Data JPA Docs](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/) — métodos de repositorio
-- [H2 Database](https://www.h2database.com) — base de datos en memoria para desarrollo
+### Spring Boot y Spring Framework
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [Spring Boot Reference Documentation](https://docs.spring.io/spring-boot/reference/index.html) | **VMware / Spring** | La referencia oficial y completa de Spring Boot: autoconfiguración, starters, Actuator, propiedades, tests y despliegue |
+| [Spring Guides](https://spring.io/guides) | **VMware / Spring** | Tutoriales prácticos oficiales paso a paso. Incluye "Building a RESTful Web Service", "Accessing Data with JPA" y más de 70 guías |
+| [Spring Data JPA Reference](https://docs.spring.io/spring-data/jpa/reference/jpa.html) | **VMware / Spring** | Documentación oficial de Spring Data JPA: repositorios, derived queries, `@Query`, Specifications y proyecciones |
+| [Spring Initializr](https://start.spring.io) | **VMware / Spring** | Generador oficial de proyectos Spring Boot. Permite elegir dependencias, versión de Java y gestor de build |
+| [Building REST services with Spring](https://spring.io/guides/tutorials/rest) | **VMware / Spring** | Tutorial oficial largo que recorre desde un CRUD básico hasta HATEOAS, manejo de errores y testing. El más completo disponible |
+
+### Diseño de APIs REST
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md) | **Microsoft** | Guía de diseño de APIs REST usada en todos los servicios de Azure. Cubre naming, versionado, paginación, errores y filtrado |
+| [HTTP — MDN Web Docs](https://developer.mozilla.org/es/docs/Web/HTTP) | **Mozilla** | Referencia completa del protocolo HTTP en español: métodos, códigos de estado, cabeceras, cookies y CORS |
+| [REST Dissertation — Roy Fielding](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm) | **UC Irvine** | La tesis doctoral donde Roy Fielding definió el estilo arquitectural REST en 2000. Lectura de referencia histórica |
+
+### Herramientas
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [Postman Learning Center](https://learning.postman.com/docs/getting-started/overview/) | **Postman** | Documentación oficial de Postman: colecciones, environments, tests automáticos de API y generación de código |
+| [OpenAPI Specification (Swagger)](https://swagger.io/docs/specification/about/) | **SmartBear** | Estándar de la industria para documentar APIs REST. Con `springdoc-openapi`, Spring Boot genera la doc automáticamente en `/swagger-ui.html` |
+| [Baeldung — Spring Boot](https://www.baeldung.com/spring-boot) | **Baeldung** | El blog técnico más completo sobre Spring. Más de 200 artículos con ejemplos de código sobre cada feature del framework |

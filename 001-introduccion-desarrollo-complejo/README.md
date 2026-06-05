@@ -818,4 +818,34 @@ Para ver detalles de implementación de cada patrón de diseño con ejemplos en 
 | [`001b-ejercicios-gestores/`](001b-ejercicios-gestores/) | Ejercicios de Maven y Gradle |
 | [`001e-ejercicio-patrones/`](001e-ejercicio-patrones/) | Ejercicio integrador de patrones de diseño |
 
+---
+
+## Recursos recomendados
+
+### Java y la JVM
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [The Java™ Tutorials](https://docs.oracle.com/javase/tutorial/) | **Oracle** | Referencia oficial del lenguaje. Cubre clases, colecciones, concurrencia, I/O y más desde la fuente primaria |
+| [Java SE Documentation](https://docs.oracle.com/en/java/javase/21/) | **Oracle** | Javadoc completo de Java 21 (LTS). Imprescindible para consultar cualquier clase del JDK |
+| [IntelliJ IDEA — Getting Started](https://www.jetbrains.com/help/idea/getting-started.html) | **JetBrains** | Guía oficial del IDE que usamos en el curso: atajos, refactors, depurador y configuración de proyectos |
+| [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html) | **Google** | Convenciones de código Java usadas en producción. Naming, indentación, comentarios Javadoc y buenas prácticas |
+
+### Principios de diseño
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [SOLID Principles — Baeldung](https://www.baeldung.com/solid-principles) | **Baeldung** | Explicación clara de los 5 principios SOLID con ejemplos en Java. El recurso más leído sobre el tema |
+| [Software Architecture Guide](https://martinfowler.com/architecture/) | **Martin Fowler** | Artículos del autor de *Refactoring* y *Patterns of Enterprise Application Architecture*. Referencia obligada sobre arquitectura |
+| [Dependency Inversion in the Wild](https://martinfowler.com/articles/dipInTheWild.html) | **Martin Fowler** | Artículo en profundidad sobre el principio de inversión de dependencias (la D de SOLID) con ejemplos reales |
+| [Refactoring Guru — Design Patterns](https://refactoring.guru/es/design-patterns) | **Refactoring Guru** | Los 23 patrones GoF con diagramas, ejemplos en múltiples lenguajes y análisis de cuándo usarlos (disponible en español) |
+
+### Gestores de dependencias
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [Maven Getting Started Guide](https://maven.apache.org/guides/getting-started/index.html) | **Apache Software Foundation** | Tutorial oficial de Maven: estructura de proyectos, ciclo de vida, plugins y gestión de dependencias |
+| [Gradle User Manual](https://docs.gradle.org/current/userguide/userguide.html) | **Gradle Inc.** | Documentación oficial completa. Incluye migraciones desde Maven, gestión de multi-proyectos y plugins |
+| [Maven Repository (mvnrepository.com)](https://mvnrepository.com/) | **Sonatype / Community** | El buscador estándar para encontrar dependencias con sus coordenadas exactas para `pom.xml` o `build.gradle` |
+
 Cada subcarpeta contiene ejemplos distintos y un `README.md` que indica qué archivos implementar en cada caso.

@@ -119,7 +119,6 @@ src/main/java/com/hotel/
 
 **`ReservaRepository`** — extiende `JpaRepository<Reserva, Long>`. Además de los métodos heredados, debe agregar:
 
-- Un método de consulta anotado con `@Query` que filtre reservas por estado, tipo de habitación y fecha de entrada mínima. Los tres parámetros son opcionales. Como el tipo de habitación pertenece a la entidad relacionada, la consulta debe usar JPQL con `JOIN` para acceder a ese campo: `SELECT r FROM Reserva r JOIN r.habitacion h WHERE ...`.
 - Un método que devuelva todas las reservas de una habitación específica, recibiendo el ID de la habitación como parámetro.
 
 ---
@@ -136,7 +135,7 @@ src/main/java/com/hotel/
 - **`registrarReserva`** — recibe el ID de la habitación y los datos de la reserva. Verifica que la habitación exista (lanza excepción si no) y persiste la reserva vinculada a esa habitación.
 - **`buscarReservaPorId`** — devuelve la reserva o lanza una excepción si no existe.
 - **`buscarReservasPorHabitacion`** — devuelve todas las reservas de una habitación dado su ID. Si la habitación no existe, lanza una excepción.
-- **`buscarReservas`** — recibe tres filtros opcionales: estado, tipo de habitación y fechaDesde. Cada filtro solo se aplica si fue enviado; si ninguno está presente, devuelve todas las reservas.
+- **`buscarReservas`** — recibe tres filtros opcionales: estado, tipo de habitación y fechaDesde. Cada filtro solo se aplica si fue enviado; si ninguno está presente, devuelve todas las reservas. Implementar esta consulta usando **CriteriaBuilder** (`EntityManager`, `CriteriaQuery`, `Predicate`) para construir los predicados dinámicamente según los parámetros presentes.
 - **`cancelarReserva`** — cambia el estado de una reserva existente a `CANCELADA`. Si no existe, lanza una excepción.
 - **`reportePorTipo`** — devuelve, agrupado por tipo de habitación: nombre del tipo, cantidad de reservas, ingresos totales (suma de `totalPagado`) y precio promedio por noche de las habitaciones de ese tipo.
 
@@ -196,6 +195,6 @@ Los tres filtros de `/reservas` son combinables entre sí: si se envían varios,
 
 Escribir tests unitarios para la capa de servicio (`HotelService`) que cubran los distintos escenarios de cada método. La cobertura de líneas del servicio debe ser **igual o superior al 80%**.
 
-- Usar **JUnit 5** y **Mockito** (ya incluidos en el starter de pruebas de Spring Boot).
-- Mockear ambos repositorios para que los tests no requieran base de datos.
+- Usar **JUnit 5** (ya incluido en el starter de pruebas de Spring Boot).
+- Usar **H2** como base de datos en memoria para los tests, tal como se explica en la sección 8 del README de la unidad 2. Agregar la dependencia `testImplementation` de H2 y configurar un `application.properties` en `src/test/resources/` apuntando a H2.
 - Verificar tanto los caminos exitosos como los casos de error (por ejemplo, que se lance la excepción correcta cuando la habitación no existe, o cuando se intenta eliminar una habitación con reservas activas).

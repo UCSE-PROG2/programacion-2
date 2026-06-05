@@ -141,6 +141,6 @@ Los tres filtros de `/libros` son combinables entre sí: si se envían varios, s
 
 Escribir tests unitarios para la capa de servicio (`LibreriaService`) que cubran los distintos escenarios de cada método. La cobertura de líneas del servicio debe ser **igual o superior al 80%**.
 
-- Usar **JUnit 5** y **Mockito** (ya incluidos en el starter de pruebas de Spring Boot).
-- Mockear el repositorio para que los tests no requieran base de datos.
+- Usar **JUnit 5** (ya incluido en el starter de pruebas de Spring Boot).
+- Usar **H2** como base de datos en memoria para los tests, tal como se explica en la sección 8 del README de la unidad 2. Agregar la dependencia `testImplementation` de H2 y configurar un `application.properties` en `src/test/resources/` apuntando a H2.
 - Verificar tanto los caminos exitosos como los casos de error (por ejemplo, que se lance la excepción correcta cuando el libro no existe).

@@ -1430,3 +1430,33 @@ Con este bloque, `./gradlew check` falla si la cobertura cae por debajo del umbr
 | `@JoinColumn(name="...")` | Especifica la columna de clave foránea |
 | `@JoinTable(...)` | Define la tabla intermedia (N a N) |
 | `mappedBy="..."` | Indica el lado inverso de la relación |
+
+---
+
+## Recursos recomendados
+
+### Jakarta Persistence (JPA) e Hibernate
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [Introduction to Hibernate 6](https://docs.hibernate.org/orm/6.6/introduction/html_single/) | **Red Hat / Hibernate** | Guía de inicio oficial y más accesible para Hibernate 6. Cubre entidades, sesiones, queries y anotaciones con ejemplos |
+| [Hibernate ORM User Guide](https://docs.hibernate.org/orm/6.6/userguide/html_single/) | **Red Hat / Hibernate** | Referencia completa: mapeo de relaciones, HQL, Criteria API, caché de segundo nivel y configuración avanzada |
+| [Jakarta Persistence Specification](https://jakarta.ee/specifications/persistence/) | **Eclipse Foundation / Jakarta EE** | Especificación oficial de JPA (la API estándar que Hibernate implementa). Útil para entender qué es estándar vs. específico de Hibernate |
+| [Hibernate: One-To-Many Relationship — Baeldung](https://www.baeldung.com/hibernate-one-to-many) | **Baeldung** | El artículo más citado sobre relaciones `@OneToMany` / `@ManyToOne` con ejemplos bidireccionales y unidireccionales |
+| [Hibernate: Many-To-Many Relationship — Baeldung](https://www.baeldung.com/hibernate-many-to-many) | **Baeldung** | Implementación de relaciones N:N con `@JoinTable`, tabla intermedia con atributos propios y uso de `Set` vs `List` |
+| [Vlad Mihalcea's Blog](https://vladmihalcea.com/tutorials/hibernate/) | **Vlad Mihalcea** (committer de Hibernate) | Blog del autor del libro *High-Performance Java Persistence*. Artículos profundos sobre N+1, caché, transacciones y fetch strategies |
+
+### SQL y MySQL
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [MySQL 8.0 Reference Manual](https://dev.mysql.com/doc/refman/8.0/en/) | **Oracle / MySQL** | Documentación oficial de MySQL: tipos de datos, índices, transacciones, JOIN, procedimientos almacenados y más |
+| [MySQL Workbench Manual](https://dev.mysql.com/doc/workbench/en/) | **Oracle / MySQL** | Guía oficial de la herramienta gráfica para diseñar diagramas ER, administrar la base y ejecutar queries |
+| [Use The Index, Luke](https://use-the-index-luke.com/) | **Markus Winand** | Recurso gratuito sobre indexación SQL. Explica cómo los índices funcionan internamente y cómo escribir queries eficientes |
+
+### Java y JDBC
+
+| Recurso | Institución | Por qué leerlo |
+|---------|------------|----------------|
+| [JDBC Basics — Oracle Java Tutorials](https://docs.oracle.com/javase/tutorial/jdbc/basics/index.html) | **Oracle** | Tutorial oficial sobre JDBC: conectar a bases de datos, ejecutar queries, manejar ResultSets y transacciones desde Java puro |
+| [H2 Database Engine](https://www.h2database.com/html/main.html) | **H2 Database** | Documentación oficial de H2. Base de datos en memoria ideal para tests y desarrollo local sin necesidad de MySQL |
