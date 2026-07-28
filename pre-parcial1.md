@@ -20,7 +20,12 @@ No se utilizará base de datos ni ORM. Toda la información se almacenará en **
 
 ## Crear el proyecto
 
-Generar el proyecto desde [Spring Initializr](https://start.spring.io) con las dependencias: **Spring Web**, **Validation** y **Lombok**.
+Generar el proyecto desde [Spring Initializr](https://start.spring.io) con la siguiente configuración:
+
+- **Group**: `com`
+- **Artifact**: `biblioteca`
+- **Package name**: `com.biblioteca`
+- **Dependencies**: Spring Web, Validation, Lombok
 
 ---
 

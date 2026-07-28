@@ -65,7 +65,12 @@ INSERT INTO hotel.reserva (habitacion_id, nombre_huesped, email_huesped, fecha_e
 
 ## Crear el proyecto
 
-Generar el proyecto desde [Spring Initializr](https://start.spring.io) con las dependencias: **Spring Web**, **Spring Data JPA**, **MySQL Driver**, **Validation** y **Lombok**.
+Generar el proyecto desde [Spring Initializr](https://start.spring.io) con la siguiente configuración:
+
+- **Group**: `com`
+- **Artifact**: `hotel`
+- **Package name**: `com.hotel`
+- **Dependencies**: Spring Web, Spring Data JPA, MySQL Driver, Validation, Lombok
 
 Configurar la conexión a la base de datos en `src/main/resources/application.properties`:
 

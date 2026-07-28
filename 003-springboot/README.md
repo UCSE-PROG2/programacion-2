@@ -138,6 +138,9 @@ La forma más simple es usar [Spring Initializr](https://start.spring.io):
 - **Project**: Gradle - Groovy (o Maven, cualquiera sirve)
 - **Language**: Java
 - **Spring Boot**: última versión estable
+- **Group**: `com`
+- **Artifact**: nombre del proyecto (ej: `ejemplo`)
+- **Package name**: `com.ejemplo` — **importante**: Spring pone `com.example` por defecto; cambiarlo para que coincida con la estructura del proyecto
 - **Dependencies**: las siguientes
 
 | Dependencia | Para qué sirve |

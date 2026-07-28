@@ -47,7 +47,12 @@ INSERT INTO agencia.paquete (nombre, destino, pais, precio_total, duracion_dias,
 
 ## Crear el proyecto
 
-Generar el proyecto desde [Spring Initializr](https://start.spring.io) con las dependencias: **Spring Web**, **Spring Data JPA**, **MySQL Driver**, **Validation** y **Lombok**.
+Generar el proyecto desde [Spring Initializr](https://start.spring.io) con la siguiente configuración:
+
+- **Group**: `com`
+- **Artifact**: `agencia`
+- **Package name**: `com.agencia`
+- **Dependencies**: Spring Web, Spring Data JPA, MySQL Driver, Validation, Lombok
 
 Configurar la conexión a la base de datos en `src/main/resources/application.properties`:
 

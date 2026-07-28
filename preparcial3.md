@@ -47,7 +47,12 @@ INSERT INTO libreria.libro (titulo, autor, genero, editorial, precio, stock, isb
 
 ## Crear el proyecto
 
-Generar el proyecto desde [Spring Initializr](https://start.spring.io) con las dependencias: **Spring Web**, **Spring Data JPA**, **MySQL Driver**, **Validation** y **Lombok**.
+Generar el proyecto desde [Spring Initializr](https://start.spring.io) con la siguiente configuración:
+
+- **Group**: `com`
+- **Artifact**: `libreria`
+- **Package name**: `com.libreria`
+- **Dependencies**: Spring Web, Spring Data JPA, MySQL Driver, Validation, Lombok
 
 Configurar la conexión a la base de datos en `src/main/resources/application.properties`:
 
