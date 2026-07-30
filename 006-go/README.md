@@ -1921,6 +1921,8 @@ sequenceDiagram
 
 Un ejercicio corto por clase (15-30 minutos), pensado para resolver en el resto de esa misma sesión, justo después de la teoría correspondiente. Cada uno construye sobre el anterior: la Clase 4 arma la API en capas que la Clase 5 conecta a MongoDB, y que la Clase 6 termina protegiendo con JWT — al final de la Unidad 6 el resultado es una única API de `Producto` completa, persistida y con autenticación.
 
+> Para evaluación (no solo práctica en clase), ver la carpeta [`ejercicios/`](ejercicios/): un archivo por clase con al menos 5 ejercicios de complejidad media cada uno, pensados para verificar que el contenido de esa clase se entendió más allá del ejemplo guiado.
+
 ### Práctica corta — Clase 1
 
 Escribir un programa en Go, en un único archivo `main.go`, que gestione una lista de tareas simple en memoria (sin persistencia, sin red — solo lógica con slices, maps y funciones).
