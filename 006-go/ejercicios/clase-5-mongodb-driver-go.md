@@ -1,6 +1,6 @@
-# Ejercicios — Clase 5: MongoDB y el driver de Go
+# Ejercicios — Clase 5: MongoDB en profundidad
 
-Ejercicios de evaluación para la [Clase 5](../README.md#clase-5--mongodb-y-el-driver-de-go). Parten de `MongoProductoRepository` ya armado en la práctica de esa clase (segunda implementación de `ProductoRepository`, conectada a un MongoDB real levantado con Docker).
+Ejercicios de evaluación para la [Clase 5](../README.md#clase-5--mongodb-en-profundidad). Parten de `MongoProductoRepository` ya conectado desde la Clase 2, y retoman con operadores reales de Mongo varios casos que en la Clase 3 se resolvieron "a mano" trayendo todo a memoria.
 
 Estos ejercicios van más allá del CRUD básico del driver — cubren operadores de query, paginación real, índices y testing de integración.
 
@@ -12,18 +12,18 @@ Extender la búsqueda más allá de por `ID` o `Nombre`.
 
 **Requerimientos:**
 
-1. Agregar a `ProductoRepository` un método `FindByPrecioRango(ctx context.Context, min, max float64) ([]Producto, error)`.
+1. Agregar a `ProductoRepository` un método `FindByPrecioRango(ctx context.Context, min, max float64) ([]model.Producto, error)`.
 2. En `MongoProductoRepository`, implementarlo armando un filtro `bson.M` que combine `$gte` y `$lte` según corresponda. Si `min` es `0`, no debería restringir el límite inferior (armar el filtro condicionalmente, no siempre con ambos operadores).
-3. En `InMemoryProductoRepository` (Clase 4), implementarlo también, recorriendo el slice/mapa con un `for` — sin usar Mongo. Ambas implementaciones deben satisfacer la interfaz extendida.
+3. Si existe `InMemoryProductoRepository` (Clase 4, Ejercicio 6, opcional), implementarlo también ahí, recorriendo el mapa con un `for` — sin usar Mongo. Si no se hizo ese ejercicio opcional, alcanza con `MongoProductoRepository`.
 4. Exponer `GET /productos?precioMin=&precioMax=` en el handler, usando este método (ambos query params opcionales).
 5. Probar contra Mongo real: cargar al menos 5 productos con precios distintos, y verificar que el filtro devuelve exactamente los esperados en 3 casos (solo mínimo, solo máximo, ambos).
 
-**Evalúa:** operadores de comparación de Mongo (`$gte`/`$lte`) combinados condicionalmente, y que extender la interfaz otra vez obliga a actualizar **las dos** implementaciones existentes (in-memory y Mongo), reforzando el Ejercicio 2 de la Clase 4.
+**Evalúa:** operadores de comparación de Mongo (`$gte`/`$lte`) combinados condicionalmente, y que extender la interfaz otra vez obliga a actualizar **todas** sus implementaciones existentes, reforzando el Ejercicio 4 de la Clase 4.
 
 **Checklist:**
 - [ ] `FindByPrecioRango(ctx, 0, 0)` (sin filtros reales) se comporta igual que `FindAll`
 - [ ] El filtro Mongo generado no incluye `$gte: 0` cuando `min` es `0` (evitar operadores innecesarios en el `bson.M`)
-- [ ] Las dos implementaciones (in-memory y Mongo) dan el mismo resultado ante el mismo set de datos y el mismo rango
+- [ ] Si existen ambas implementaciones, dan el mismo resultado ante el mismo set de datos y el mismo rango
 
 ---
 
@@ -89,7 +89,7 @@ Una operación de escritura masiva, distinta a los 5 métodos CRUD ya conocidos.
 
 ## Ejercicio 5 — Test de integración contra Mongo real
 
-Un test que efectivamente habla con la base (no un fake, a diferencia del Ejercicio 3 de la Clase 4).
+Un test que efectivamente habla con la base (no un fake, a diferencia del Ejercicio 4 de la Clase 4).
 
 **Requerimientos:**
 
@@ -98,7 +98,7 @@ Un test que efectivamente habla con la base (no un fake, a diferencia del Ejerci
 3. Usar `t.Cleanup(...)` para garantizar que el documento de test se borra al final **incluso si el test falla a mitad de camino** (evitar que quede basura en la base entre corridas).
 4. Documentar en un comentario al inicio del archivo qué hace falta tener corriendo antes de ejecutar este test (el contenedor de Mongo vía Docker) — este tipo de test no debería correr en un `go test ./...` normal sin ese requisito previo (opcional: investigar y aplicar un build tag o una variable de entorno para excluirlo por defecto).
 
-**Evalúa:** diferencia entre un test unitario (Ejercicio 3 de la Clase 4, con fake, rápido, sin dependencias externas) y un test de integración (lento, depende de infraestructura real, pero verifica el comportamiento real del driver), uso de `t.Cleanup` para dejar el entorno de test limpio.
+**Evalúa:** diferencia entre un test unitario (Ejercicio 4 de la Clase 4, con fake, rápido, sin dependencias externas) y un test de integración (lento, depende de infraestructura real, pero verifica el comportamiento real del driver), uso de `t.Cleanup` para dejar el entorno de test limpio.
 
 **Checklist:**
 - [ ] El test corre contra una base separada de la de desarrollo, no contamina datos reales

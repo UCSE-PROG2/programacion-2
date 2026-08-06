@@ -1,8 +1,8 @@
-# Ejercicios — Clase 3: net/http, Gin y REST en Go
+# Ejercicios — Clase 3: Gin en profundidad
 
-Ejercicios de evaluación para la [Clase 3](../README.md#clase-3--nethttp-gin-y-rest-en-go). Suman a lo de las Clases 1-2: ahora hay rutas, parámetros, JSON, `binding` y `context.Context`.
+Ejercicios de evaluación para la [Clase 3](../README.md#clase-3--gin-en-profundidad). Profundizan lo que la Clase 2 usó sin explicar del todo: parámetros de path y de query, `binding`, códigos de estado por caso, y `context.Context`.
 
-**Todavía no hay arquitectura en capas ni repository** (eso es la Clase 4) — los handlers pueden trabajar directamente sobre un slice fijo declarado en `main` o a nivel de paquete. Tampoco hay persistencia real: reiniciar el servidor pierde los datos, y **eso es esperado** en esta clase.
+Los Ejercicios 1, 3, 4 y 5 son mini-servidores Gin independientes, sobre un slice fijo en memoria — practican Gin de forma aislada, sin depender del proyecto del TP. El Ejercicio 2 sí trabaja sobre el `service`/`handler` de `Producto` ya conectado a Mongo desde la Clase 2, para practicar la distinción entre validación de forma y de negocio en un contexto real. Ningún ejercicio de esta clase filtra ni pagina **en la base** todavía — eso es la Clase 5, que retoma exactamente estos mismos casos y los resuelve "de verdad" contra Mongo.
 
 ---
 
@@ -28,37 +28,37 @@ Un slice fijo en memoria de `Tarea{ID string, Titulo string, Completada bool}`.
 
 ## Ejercicio 2 — Validación de negocio que `binding` no puede expresar
 
-Sobre el mismo slice fijo de productos usado en la clase (`Producto{ID, Nombre, Precio}`).
+Sobre el `Producto` real de la Clase 2, ya conectado a `MongoProductoRepository`.
 
 **Requerimientos:**
 
-1. `POST /productos` valida con los tags ya conocidos (`Nombre` requerido, `Precio > 0`).
-2. Además, **dentro del handler** (todavía no hay service), rechazar con `409 Conflict` si ya existe un producto con el mismo `Nombre` en el slice (comparación exacta, sin distinguir mayúsculas/minúsculas — normalizar con `strings.EqualFold`).
-3. Si pasa ambas validaciones, agregar el producto al slice en memoria (protegido de la forma que corresponda para esta clase — no hace falta `sync.Mutex` todavía si el ejercicio se prueba de forma secuencial, pero dejarlo mencionado como pendiente para más adelante) y responder `201 Created`.
+1. `POST /productos` ya valida con los tags conocidos (`Nombre` requerido, `Precio > 0`) vía `binding`.
+2. Agregar, **dentro del `service`** (no en el handler — ya existe esa capa desde la Clase 2), un rechazo con `409 Conflict` si ya existe un producto con el mismo `Nombre` (comparación sin distinguir mayúsculas/minúsculas — normalizar con `strings.EqualFold`; para esto, `ProductoService.Crear` primero necesita traer los productos existentes con `FindAll` y comparar en Go — la forma de hacer esto directamente en la base es la Clase 5).
+3. El `service` debe devolver un error distinguible (no genérico) para que el `handler` pueda mapearlo a `409` específicamente, sin confundirlo con un error interno.
 4. Probar: alta exitosa, alta con datos inválidos (400), alta con nombre duplicado (409).
 
-**Evalúa:** distinguir claramente una validación de **forma** (`binding`, se resuelve con tags) de una validación de **negocio** (requiere mirar el estado actual de los datos, se resuelve con código explícito en el handler) — la misma distinción que la Clase 4 va a mover a la capa de `service`.
+**Evalúa:** distinguir claramente una validación de **forma** (`binding`, se resuelve con tags en el handler) de una validación de **negocio** (requiere mirar el estado actual de los datos, y por eso vive en el `service`, no en el handler ni en el repository) — la misma separación de capas ya vista en la Clase 2.
 
 **Checklist:**
 - [ ] Un nombre duplicado con distinta capitalización (`"Mouse"` vs `"mouse"`) también es rechazado
 - [ ] El código de estado distingue los tres casos: 201, 400, 409 (no todo cae en 400)
-- [ ] El slice en memoria refleja el nuevo producto después de un alta exitosa
+- [ ] La regla de negocio vive en `internal/service`, no en `internal/handler`
 
 ---
 
 ## Ejercicio 3 — Paginación manual con query params
 
-Sobre un slice fijo de al menos 10 productos precargados.
+Sobre un slice fijo de al menos 10 artículos precargados (`Articulo{ID, Nombre string, Precio float64}` — un mini-servidor Gin aparte, sin tocar el `Producto` real de Mongo, para aislar la práctica de paginación).
 
 **Requerimientos:**
 
-1. `GET /productos?pagina=1&tamanio=3` — devuelve una porción (slice del slice) según `pagina` y `tamanio`, usando `c.DefaultQuery` para valores por defecto razonables si no vienen.
+1. `GET /articulos?pagina=1&tamanio=3` — devuelve una porción (slice del slice) según `pagina` y `tamanio`, usando `c.DefaultQuery` para valores por defecto razonables si no vienen.
 2. Validar que `pagina` y `tamanio` sean enteros positivos (`> 0`); si no, `400 Bad Request`.
 3. Si `pagina` pide una página que no existe (ej: página 100 de una lista de 10 elementos), devolver `200 OK` con una lista **vacía**, no un error.
-4. La respuesta JSON debe incluir, además de los productos de esa página, metadata: `total` (cantidad total de productos), `pagina` y `tamanio` actuales.
+4. La respuesta JSON debe incluir, además de los artículos de esa página, metadata: `total` (cantidad total), `pagina` y `tamanio` actuales.
 5. Probar al menos: primera página, última página parcial (menos elementos que `tamanio`), y una página fuera de rango.
 
-**Evalúa:** conversión y validación de query params numéricos, slicing correcto sin salirse de los límites del slice (`index out of range` es un error común acá), diseño de una respuesta JSON con metadata además de los datos.
+**Evalúa:** conversión y validación de query params numéricos, slicing correcto sin salirse de los límites del slice (`index out of range` es un error común acá), diseño de una respuesta JSON con metadata además de los datos. Es intencionalmente "a mano" y sobre un slice fijo, no contra Mongo — la Clase 5 retoma este mismo problema y lo resuelve con `Skip`/`Limit` reales contra la base.
 
 **Checklist:**
 - [ ] Ninguna combinación de `pagina`/`tamanio` provoca un `panic` por índice fuera de rango
@@ -69,13 +69,13 @@ Sobre un slice fijo de al menos 10 productos precargados.
 
 ## Ejercicio 4 — Tres códigos de estado bien diferenciados en un PUT
 
-`PUT /productos/:id` sobre el slice fijo de productos.
+`PUT /productos/:id`, sobre el `Producto` real ya conectado a Mongo desde la Clase 2.
 
 **Requerimientos:**
 
 1. Si el body no es JSON válido o no cumple `binding`, responder `400 Bad Request` con el detalle del error de validación.
-2. Si el body es válido pero el `:id` de la URL no corresponde a ningún producto del slice, responder `404 Not Found`.
-3. Si todo es válido y el producto existe, actualizar `Nombre` y `Precio` en el slice y responder `200 OK` con el producto actualizado completo.
+2. Si el body es válido pero el `:id` de la URL no corresponde a ningún producto existente, responder `404 Not Found`.
+3. Si todo es válido y el producto existe, actualizar `Nombre` y `Precio` y responder `200 OK` con el producto actualizado completo.
 4. Escribir al menos 3 pruebas manuales con `curl` (una por cada código de estado) y documentar los comandos usados (pueden ir como comentario al final del archivo o en un bloque separado).
 
 **Evalúa:** que el orden de las validaciones importa (parsear/validar el body **antes** de buscar el `:id`, para no hacer trabajo de más si el body ya es inválido), separar claramente "dato mal formado" de "recurso inexistente" — un error común es devolver 404 para ambos casos.
@@ -102,6 +102,6 @@ Simular una operación que tarda, y cortarla si se excede un plazo — practican
 **Evalúa:** uso real (no solo mencionado) de `context.WithTimeout`, propagación del contexto del request de Gin hacia una función que no conoce `gin.Context`, un código de estado HTTP específico para timeouts (504, distinto de 500).
 
 **Checklist:**
-- [ ] `generarReporte` no importa `"github.com/gin-gonic/gin"` — solo recibe `context.Context`, como corresponde a una función que en la Clase 4 podría vivir en el `service`
+- [ ] `generarReporte` no importa `"github.com/gin-gonic/gin"` — solo recibe `context.Context`, como corresponde a una función que ya podría vivir en el `service` (la capa que existe desde la Clase 2)
 - [ ] Con timeout de 1s, la respuesta es 504 y llega en ~1s (no espera los 3s completos)
 - [ ] Con timeout de 5s, la respuesta es 200 con el resultado

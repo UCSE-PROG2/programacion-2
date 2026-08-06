@@ -1,27 +1,26 @@
-# Ejercicios — Clase 6: JWT, bcrypt, middlewares y logging
+# Ejercicios — Clase 6: JWT, bcrypt, middlewares y autorización por rol
 
-Ejercicios de evaluación para la [Clase 6](../README.md#clase-6--jwt-bcrypt-middlewares-y-logging), la última de la Unidad 6. Parten de `POST /login` y `AuthMiddleware()` ya armados en la práctica de esa clase.
+Ejercicios de evaluación para la [Clase 6](../README.md#clase-6--jwt-bcrypt-middlewares-y-autorización-por-rol), la última de la Unidad 6. Parten de `POST /login`, `AuthMiddleware()` y `RequireRole(...)` ya armados en la práctica de esa clase.
 
 ---
 
-## Ejercicio 1 — Roles y autorización (no solo autenticación)
+## Ejercicio 1 — Más de un rol permitido, y un tercer rol de solo lectura
 
-`AuthMiddleware` de la clase solo verifica **quién es** el usuario (autenticación). Este ejercicio agrega **qué puede hacer** (autorización).
+`RequireRole` de la clase ya distingue autenticación de autorización. Este ejercicio lo pone a prueba con un esquema de roles más parecido al de Gestock: `administrador`, `gerente` y `auditor` (este último, de solo lectura).
 
 **Requerimientos:**
 
-1. Al generar el token en `GenerarToken`, agregar un claim adicional `rol` (`"admin"` o `"cliente"`), tomado del `Usuario` que hace login (agregar el campo `Rol` al struct `Usuario`).
-2. Crear `RequireRol(rolRequerido string) gin.HandlerFunc` — una **fábrica** de middleware (a diferencia de `AuthMiddleware()`, que no recibe parámetros, esta función recibe un argumento y devuelve el middleware ya configurado).
-3. `RequireRol` debe validar el JWT igual que `AuthMiddleware` (o asumir que corre **después** de él en la cadena y leer el rol ya guardado con `c.Get(...)`) y, si el rol del token no coincide con el requerido, responder `403 Forbidden` (no 401 — ya está autenticado, simplemente no tiene permiso).
-4. Aplicar `RequireRol("admin")` únicamente a `DELETE /productos/:id`, dejando `POST`/`PUT` accesibles para cualquier usuario autenticado (cualquier rol).
-5. Probar con un usuario `cliente` intentando borrar (403) y un usuario `admin` haciéndolo (204).
+1. Extender el `Usuario` y el claim `rol` del JWT para admitir estos tres valores (en vez de un esquema binario admin/cliente).
+2. Aplicar `RequireRole("administrador", "gerente")` a `POST /productos` y `PUT /productos/:id` (ambos roles pueden crear/editar), y `RequireRole("administrador")` únicamente a `DELETE /productos/:id`.
+3. Las rutas `GET` quedan accesibles para **cualquier** rol autenticado, incluido `auditor` — pero un `auditor` que intente `POST`/`PUT`/`DELETE` debe recibir `403`, nunca `401` (ya está autenticado, solo no tiene permiso).
+4. Probar los nueve casos relevantes: los tres roles contra `POST`, contra `PUT` y contra `DELETE` (algunos deberían dar éxito, otros 403).
 
-**Evalúa:** diferencia entre 401 y 403, middleware parametrizado (factory), diseño de una cadena de middlewares donde uno depende de datos que dejó otro anterior (`c.Get`).
+**Evalúa:** que `RequireRole` acepte una lista de roles válidos (no solo uno), diferencia entre 401 y 403, diseño de una cadena de middlewares donde uno depende de datos que dejó otro anterior (`c.Get`).
 
 **Checklist:**
-- [ ] Un token válido de un usuario `cliente` en `DELETE /productos/:id` responde 403, no 401 ni 500
-- [ ] Un token de `admin` en la misma ruta responde 204 (o el código de éxito elegido)
-- [ ] `RequireRol` es reutilizable: se podría aplicar con otro rol distinto sin duplicar código
+- [ ] Un token de `auditor` en `POST /productos` responde 403, no 401 ni 500
+- [ ] Un token de `gerente` en `POST /productos` responde 201 (tiene permiso), pero en `DELETE /productos/:id` responde 403 (no lo tiene)
+- [ ] `RequireRole("administrador", "gerente")` no duplica lógica respecto de `RequireRole("administrador")` — es la misma función, con distintos argumentos
 
 ---
 

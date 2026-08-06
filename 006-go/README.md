@@ -1868,7 +1868,7 @@ sequenceDiagram
 
 Un ejercicio corto por clase (15-30 minutos), pensado para resolver justo después de la teoría correspondiente. La Clase 2 arma el esqueleto real del TP; el resto profundiza sobre esa misma base.
 
-> Para evaluación (no solo práctica en clase), la carpeta `ejercicios/` va a necesitar revisarse para quedar alineada a este nuevo orden — hoy sigue mapeada al orden anterior (in-memory antes que Mongo, Gin antes que capas). Queda pendiente como tarea aparte antes de usarla en evaluación.
+> Para evaluación (no solo práctica en clase), ver la carpeta [`ejercicios/`](ejercicios/): un archivo por clase, alineado a esta misma estructura, con al menos 5 ejercicios de complejidad media cada uno.
 
 ### Práctica corta — Clase 1
 

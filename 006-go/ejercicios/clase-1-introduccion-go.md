@@ -1,8 +1,10 @@
 # Ejercicios — Clase 1: Introducción a Go
 
-Ejercicios de evaluación para la [Clase 1](../README.md#clase-1--introducción-a-go). Usan solo lo visto hasta esa clase: variables, tipos, control de flujo, funciones con múltiples retornos, slices, maps y errores como valores.
+Ejercicios de evaluación para la [Clase 1](../README.md#clase-1--introducción-a-go) (ampliada). Usan todo lo visto en esa clase: variables, tipos, control de flujo, funciones con múltiples retornos, slices, maps, errores como valores, `go mod`, `struct`, punteros, métodos con receiver e interfaces con satisfacción implícita.
 
-**No usar** `struct`, `interface` ni punteros (`&`/`*`) — eso es contenido de la Clase 2. Todo el código va en un único `package main`.
+Los Ejercicios 1 a 5 son de lenguaje puro (todo en un único `package main`, sin `struct` ni `interface`). Los Ejercicios 6 y 7 suman structs, punteros e interfaces en un paquete propio.
+
+**No usar todavía** el paquete `testing` ni `go test` — eso es contenido de la Clase 4. La verificación de estos dos últimos ejercicios se hace imprimiendo resultados desde `main()`, no con tests automatizados.
 
 ---
 
@@ -103,3 +105,47 @@ Dado un slice de strings (por ejemplo, líneas de un chat de soporte), hay que a
 - [ ] `ContarPalabras` no distingue mayúsculas de minúsculas al contar (`"Hola"` y `"hola"` suman a la misma clave)
 - [ ] `PalabraMasFrecuente` de un mapa vacío devuelve error, no la palabra `""` con cantidad `0` como si fuera válida
 - [ ] El programa completo pasa `go vet ./...` sin advertencias
+
+---
+
+## Ejercicio 6 — Catálogo de figuras con interfaz doble
+
+Extender el ejemplo de `Figura` visto en clase, agregando una segunda operación y un constructor que valida.
+
+**Requerimientos:**
+
+1. Interfaz `Figura` con **dos** métodos: `Area() float64` y `Perimetro() float64`.
+2. Structs `Rectangulo` (`Ancho`, `Alto`) y `Circulo` (`Radio`) que satisfagan `Figura`.
+3. Struct `Triangulo` (tres lados `A`, `B`, `C`) que también la satisfaga, calculando el área con la **fórmula de Herón**. Agregar una función constructora `NuevoTriangulo(a, b, c float64) (*Triangulo, error)` que devuelva error si los tres lados no forman un triángulo válido (la suma de cualquier par de lados debe ser mayor al tercero).
+4. `FiguraMasGrande(figuras []Figura) Figura` — recorre un slice mixto de figuras y devuelve la de mayor área, sin usar un `switch`/`if` por tipo concreto (debe funcionar solo llamando al método de la interfaz).
+5. En `main()`: crear un slice con varias figuras de los tres tipos (incluyendo al menos un intento de `NuevoTriangulo` con lados inválidos, imprimiendo el error), e imprimir el resultado de `FiguraMasGrande` y su área.
+
+**Evalúa:** interfaz con más de un método, satisfacción implícita con múltiples tipos, constructor que valida y devuelve error + puntero, función que opera solo contra la interfaz (polimorfismo sin `type switch`).
+
+**Checklist:**
+- [ ] `FiguraMasGrande` no usa `switch tipo := f.(type)` ni ningún `type assertion` — solo llama a `Area()`
+- [ ] `NuevoTriangulo(1, 1, 10)` imprime un error, no un triángulo con área `NaN` o negativa
+- [ ] El programa corre con `go run` sin `panic` en ningún caso probado
+
+---
+
+## Ejercicio 7 — Cuenta bancaria con encapsulamiento real
+
+A diferencia de Java, Go no tiene `private` — la exportación por mayúscula/minúscula es la única herramienta, y acá se usa a propósito.
+
+**Requerimientos:**
+
+1. Crear un paquete `banco` (carpeta propia) con un struct `CuentaBancaria` cuyo campo de saldo (`saldo float64`) sea **privado al paquete** (minúscula) — no debe poder leerse ni escribirse directamente desde otro paquete.
+2. Constructor `NuevaCuenta(titular string, saldoInicial float64) (*CuentaBancaria, error)` — rechaza `saldoInicial` negativo.
+3. Método `(c *CuentaBancaria) Depositar(monto float64) error` (pointer receiver) — rechaza montos `<= 0`.
+4. Método `(c *CuentaBancaria) Retirar(monto float64) error` (pointer receiver) — rechaza montos `<= 0` o mayores al saldo disponible.
+5. Método `(c CuentaBancaria) Saldo() float64` (value receiver, de solo lectura) — es la **única** forma en que otro paquete puede conocer el saldo.
+6. Desde `main` (otro paquete), probar que **no compila** si se intenta acceder a `cuenta.saldo` directamente (dejar el intento comentado con una nota explicando por qué no compila), y sí funciona a través de `Saldo()`.
+7. En `main()`: crear una cuenta, hacer varios depósitos y retiros (incluyendo uno que exceda el saldo disponible), e imprimir el saldo antes y después de cada operación para verificar a simple vista que `Retirar`/`Depositar` mutan el original y que un retiro fallido no cambia el saldo.
+
+**Evalúa:** exportación a nivel de paquete como mecanismo de encapsulamiento, por qué `Depositar`/`Retirar` necesitan pointer receiver y `Saldo` no.
+
+**Checklist:**
+- [ ] `saldo` es un campo privado del paquete `banco`, no accesible desde `main`
+- [ ] Un `Retirar` que excede el saldo disponible deja el saldo exactamente igual que antes (verificado imprimiéndolo)
+- [ ] `Depositar`/`Retirar` usan pointer receiver; `Saldo` usa value receiver
