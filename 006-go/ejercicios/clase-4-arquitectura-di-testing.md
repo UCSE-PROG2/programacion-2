@@ -1,6 +1,6 @@
 # Ejercicios — Clase 4: Arquitectura, inyección de dependencias y testing
 
-Ejercicios de evaluación para la [Clase 4](../README.md#clase-4--arquitectura-inyección-de-dependencias-y-testing). Los Ejercicios 1 y 2 son de `testing`/`go test` puro, aplicados a structs e interfaces ya vistos en la Clase 1 (no tocan Gin ni Mongo). Los Ejercicios 3 a 6 parten de la arquitectura ya armada desde la Clase 2: `handler` → `service` → `ProductoRepository` (interfaz) → `MongoProductoRepository`, con `router.Group("/productos")` y DI manual en `main.go` — y evalúan si el patrón se entendió lo suficiente como para **extenderlo**, **testearlo** y **generalizarlo**.
+Ejercicios de evaluación para la [Clase 4](../README.md#clase-4--arquitectura-inyección-de-dependencias-y-testing). Los Ejercicios 1 y 2 son de `testing`/`go test` puro, aplicados a structs e interfaces ya vistos en la Clase 1 (no tocan Gin ni Mongo). Los Ejercicios 3 a 6 parten de la arquitectura ya armada desde la Clase 2: paquete `internal/producto/` con `handler.go` → `service.go` → `Repository` (interfaz) → `MongoRepository`, `router.Group("/productos")` y DI manual en `main.go` — y evalúan si el patrón se entendió lo suficiente como para **extenderlo**, **testearlo** y **generalizarlo**.
 
 ---
 
@@ -56,16 +56,16 @@ Agregar una capacidad nueva al repository sin romper lo existente.
 
 **Requerimientos:**
 
-1. Agregar un método `FindByNombre(ctx context.Context, nombre string) (model.Producto, error)` a la interfaz `ProductoRepository`.
-2. Implementarlo en `MongoProductoRepository` con un filtro `bson.M{"nombre": nombre}`; si no hay coincidencia, devolver el mismo tipo de error que usa `FindByID` para "no encontrado".
-3. Agregar el método correspondiente en `ProductoService` (puede llamarse igual, delegando al repository).
+1. Agregar un método `FindByNombre(ctx context.Context, nombre string) (Producto, error)` a la interfaz `Repository` (paquete `producto`).
+2. Implementarlo en `MongoRepository` con un filtro `bson.M{"nombre": nombre}`; si no hay coincidencia, devolver el mismo tipo de error que usa `FindByID` para "no encontrado".
+3. Agregar el método correspondiente en `Service` (puede llamarse igual, delegando al repository).
 4. Exponer `GET /productos/buscar?nombre=...` en el handler, usando este nuevo método (no traer todo con `FindAll` y filtrar a mano en el handler — el punto es usar el nuevo método del repository).
-5. Un test para `ProductoService.BuscarPorNombre` usando el `fakeProductoRepository` del Ejercicio 4 (caso encontrado y caso no encontrado), sin necesidad de Mongo real.
+5. Un test para `Service.BuscarPorNombre` usando el `fakeRepository` del Ejercicio 4 (caso encontrado y caso no encontrado), sin necesidad de Mongo real.
 
-**Evalúa:** que agregar un método a una interfaz obliga a tocar **todas** sus implementaciones (acá `MongoProductoRepository`, y cualquier fake de test que ya exista), disciplina de propagar un cambio de contrato de forma consistente por las capas.
+**Evalúa:** que agregar un método a una interfaz obliga a tocar **todas** sus implementaciones (acá `MongoRepository`, y cualquier fake de test que ya exista), disciplina de propagar un cambio de contrato de forma consistente.
 
 **Checklist:**
-- [ ] `ProductoRepository` (la interfaz) tiene el método nuevo declarado
+- [ ] `Repository` (la interfaz, en `repository.go`) tiene el método nuevo declarado
 - [ ] `GET /productos/buscar?nombre=Mouse` devuelve el producto correcto; con un nombre inexistente, devuelve 404
 - [ ] El handler no itera productos a mano — delega en el nuevo método del `service`
 
@@ -73,57 +73,57 @@ Agregar una capacidad nueva al repository sin romper lo existente.
 
 ## Ejercicio 4 — Repository fake para testear el service sin HTTP ni Mongo real
 
-El ejercicio central para demostrar por qué el `service` depende de una interfaz y no de `MongoProductoRepository` directamente.
+El ejercicio central para demostrar por qué el `service` depende de una interfaz y no de `MongoRepository` directamente.
 
 **Requerimientos:**
 
-1. En un archivo `producto_service_test.go`, definir un `fakeProductoRepository` **propio del test**: un struct que satisface `ProductoRepository` "a mano", con campos que permiten configurar qué devuelve cada método (por ejemplo, un slice `productos` predefinido, o un `error` a devolver forzado, para simular una falla del repository sin usar Mongo).
-2. Usar ese fake para testear `ProductoService.Crear`, cubriendo: alta exitosa, y rechazo por nombre duplicado (agregar esta regla de negocio al `service` si todavía no existe — comparar contra los productos que devuelve `FindAll` en el fake) — sin levantar ningún servidor Gin ni contenedor de Mongo.
-3. Agregar un test donde el fake **simula una falla del repository** (por ejemplo, `FindAll` devuelve un error) y verificar que `ProductoService.Crear` propaga ese error correctamente en vez de ocultarlo o hacer `panic`.
+1. En un archivo `service_test.go` (mismo paquete `producto`), definir un `fakeRepository` **propio del test**: un struct que satisface `Repository` "a mano", con campos que permiten configurar qué devuelve cada método (por ejemplo, un slice `productos` predefinido, o un `error` a devolver forzado, para simular una falla del repository sin usar Mongo).
+2. Usar ese fake para testear `Service.Crear`, cubriendo: alta exitosa, y rechazo por nombre duplicado (agregar esta regla de negocio al `service` si todavía no existe — comparar contra los productos que devuelve `FindAll` en el fake) — sin levantar ningún servidor Gin ni contenedor de Mongo.
+3. Agregar un test donde el fake **simula una falla del repository** (por ejemplo, `FindAll` devuelve un error) y verificar que `Service.Crear` propaga ese error correctamente en vez de ocultarlo o hacer `panic`.
 4. Ninguno de estos tests debe importar `"github.com/gin-gonic/gin"` ni requerir Mongo levantado.
 
-**Evalúa:** comprensión real de la inyección de dependencias — un test que solo pasa usando el fake demuestra que el `service` efectivamente no conoce ni depende de `MongoProductoRepository`, sino del contrato `ProductoRepository`.
+**Evalúa:** comprensión real de la inyección de dependencias — un test que solo pasa usando el fake demuestra que el `service` efectivamente no conoce ni depende de `MongoRepository`, sino del contrato `Repository`.
 
 **Checklist:**
-- [ ] `fakeProductoRepository` satisface `ProductoRepository` (se puede verificar con `var _ ProductoRepository = &fakeProductoRepository{}`)
-- [ ] Los tests de `ProductoService` corren sin conexión a red, sin Gin y sin Docker levantado (`go test ./internal/service` funciona con Mongo apagado)
+- [ ] `fakeRepository` satisface `Repository` (se puede verificar con `var _ Repository = &fakeRepository{}`)
+- [ ] Los tests de `Service` corren sin conexión a red, sin Gin y sin Docker levantado (`go test ./internal/producto` funciona con Mongo apagado)
 - [ ] Existe al menos un test donde el fake fuerza un error y se verifica que el service lo propaga
 
 ---
 
 ## Ejercicio 5 — DTO de salida en el handler
 
-Practicar por qué el DTO vive en el handler, no en capas inferiores.
+Practicar por qué el DTO vive junto al handler, no en capas inferiores.
 
 **Requerimientos:**
 
-1. Crear `dto.ProductoRespuesta` con: `Nombre`, `Precio`, y un campo nuevo calculado `Slug` (versión del nombre en minúsculas y con espacios reemplazados por guiones, ej: `"Teclado Mecánico"` → `"teclado-mecanico"`) — sin exponer el `ID` interno del modelo.
-2. Escribir una función `model.Producto` → `dto.ProductoRespuesta` (puede vivir en el paquete `dto` o en el `handler`, pero **no** en el `service` ni en el `repository`).
-3. Modificar `GET /productos` y `GET /productos/:id` para responder con el DTO en vez del `model.Producto` directo.
-4. `POST` y `PUT` pueden seguir recibiendo/devolviendo `model.Producto` tal cual, o aplicarles el mismo criterio — decidir y justificar brevemente en un comentario.
+1. En un archivo nuevo `dto.go`, dentro del mismo paquete `producto`, crear un struct `Respuesta` con: `Nombre`, `Precio`, y un campo nuevo calculado `Slug` (versión del nombre en minúsculas y con espacios reemplazados por guiones, ej: `"Teclado Mecánico"` → `"teclado-mecanico"`) — sin exponer el `ID` interno del modelo.
+2. Escribir una función `Producto` → `Respuesta` en ese mismo `dto.go` (no en `service.go` ni en `repository.go`).
+3. Modificar `GET /productos` y `GET /productos/:id` (en `handler.go`) para responder con `Respuesta` en vez de `Producto` directo.
+4. `POST` y `PUT` pueden seguir recibiendo/devolviendo `Producto` tal cual, o aplicarles el mismo criterio — decidir y justificar brevemente en un comentario.
 
-**Evalúa:** separación entre el modelo interno de persistencia y lo que efectivamente viaja por la API, ubicación correcta de la lógica de mapeo (una decisión de presentación, no de negocio ni de datos).
+**Evalúa:** separación entre el modelo interno de persistencia y lo que efectivamente viaja por la API, ubicación correcta de la lógica de mapeo (una decisión de presentación, no de negocio ni de datos) — aunque ya no haya una carpeta `dto/` separada, la responsabilidad se mantiene en su propio archivo.
 
 **Checklist:**
 - [ ] El JSON de `GET /productos` ya no incluye el campo `id` crudo del modelo (o lo reemplaza según lo decidido), pero sí incluye `slug`
-- [ ] `service` y `repository` siguen trabajando exclusivamente con `model.Producto`, sin conocer `dto.ProductoRespuesta`
+- [ ] `service.go` y `repository.go` siguen trabajando exclusivamente con `Producto`, sin conocer `Respuesta`
 - [ ] La función de mapeo tiene al menos un test que verifique el cálculo del `slug`
 
 ---
 
 ## Ejercicio 6 — Una segunda implementación, para desarrollo local sin Docker
 
-Desde la Clase 2, `ProductoRepository` tiene una sola implementación real (`MongoProductoRepository`). Este ejercicio agrega una segunda, puramente en memoria, útil para desarrollar o testear sin depender de que Mongo esté levantado — y demuestra que la interfaz efectivamente permite intercambiarlas.
+Desde la Clase 2, `Repository` tiene una sola implementación real (`MongoRepository`). Este ejercicio agrega una segunda, puramente en memoria, útil para desarrollar o testear sin depender de que Mongo esté levantado — y demuestra que la interfaz efectivamente permite intercambiarlas.
 
 **Requerimientos:**
 
-1. Crear `InMemoryProductoRepository`, una implementación de `ProductoRepository` que guarde los productos en un `map[string]model.Producto` protegido con `sync.Mutex` (Gin atiende requests concurrentes).
-2. En `main.go`, permitir elegir cuál de las dos implementaciones se inyecta mediante una variable de entorno (por ejemplo, `REPO=memoria` vs. el default contra Mongo), sin tocar `service` ni `handler`.
-3. Un test que verifique que `InMemoryProductoRepository` satisface el mismo contrato que se testeó contra el fake en el Ejercicio 4 (mismo comportamiento observable ante `Create`/`FindByID`/etc.).
+1. En `repository.go` (o un archivo nuevo `memory_repository.go`, mismo paquete `producto`), crear `InMemoryRepository`, una implementación de `Repository` que guarde los productos en un `map[string]Producto` protegido con `sync.Mutex` (Gin atiende requests concurrentes).
+2. En `main.go`, permitir elegir cuál de las dos implementaciones se inyecta mediante una variable de entorno (por ejemplo, `REPO=memoria` vs. el default contra Mongo), sin tocar `service.go` ni `handler.go`.
+3. Un test que verifique que `InMemoryRepository` satisface el mismo contrato que se testeó contra el fake en el Ejercicio 4 (mismo comportamiento observable ante `Create`/`FindByID`/etc.).
 
-**Evalúa:** que "cambiar de implementación" es literalmente una decisión de una línea en `main.go` — el mismo mecanismo que ya se usó para pasar de una interfaz a `MongoProductoRepository` en la Clase 2, ahora en la dirección inversa.
+**Evalúa:** que "cambiar de implementación" es literalmente una decisión de una línea en `main.go` — el mismo mecanismo que ya se usó para pasar de una interfaz a `MongoRepository` en la Clase 2, ahora en la dirección inversa.
 
 **Checklist:**
-- [ ] Ambas implementaciones satisfacen `ProductoRepository` sin modificar la interfaz
-- [ ] Cambiar la variable de entorno cambia el comportamiento observable (persiste o no entre reinicios) sin recompilar código de `service`/`handler`
-- [ ] `InMemoryProductoRepository` usa `sync.Mutex` para proteger el mapa
+- [ ] Ambas implementaciones satisfacen `Repository` sin modificar la interfaz
+- [ ] Cambiar la variable de entorno cambia el comportamiento observable (persiste o no entre reinicios) sin recompilar código de `service.go`/`handler.go`
+- [ ] `InMemoryRepository` usa `sync.Mutex` para proteger el mapa

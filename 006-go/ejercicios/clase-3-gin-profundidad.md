@@ -28,21 +28,21 @@ Un slice fijo en memoria de `Tarea{ID string, Titulo string, Completada bool}`.
 
 ## Ejercicio 2 — Validación de negocio que `binding` no puede expresar
 
-Sobre el `Producto` real de la Clase 2, ya conectado a `MongoProductoRepository`.
+Sobre el `Producto` real de la Clase 2, ya conectado a `producto.MongoRepository`.
 
 **Requerimientos:**
 
 1. `POST /productos` ya valida con los tags conocidos (`Nombre` requerido, `Precio > 0`) vía `binding`.
-2. Agregar, **dentro del `service`** (no en el handler — ya existe esa capa desde la Clase 2), un rechazo con `409 Conflict` si ya existe un producto con el mismo `Nombre` (comparación sin distinguir mayúsculas/minúsculas — normalizar con `strings.EqualFold`; para esto, `ProductoService.Crear` primero necesita traer los productos existentes con `FindAll` y comparar en Go — la forma de hacer esto directamente en la base es la Clase 5).
+2. Agregar, **dentro de `service.go`** (no en `handler.go` — ya existe esa separación desde la Clase 2, aunque compartan paquete), un rechazo con `409 Conflict` si ya existe un producto con el mismo `Nombre` (comparación sin distinguir mayúsculas/minúsculas — normalizar con `strings.EqualFold`; para esto, `Service.Crear` primero necesita traer los productos existentes con `FindAll` y comparar en Go — la forma de hacer esto directamente en la base es la Clase 5).
 3. El `service` debe devolver un error distinguible (no genérico) para que el `handler` pueda mapearlo a `409` específicamente, sin confundirlo con un error interno.
 4. Probar: alta exitosa, alta con datos inválidos (400), alta con nombre duplicado (409).
 
-**Evalúa:** distinguir claramente una validación de **forma** (`binding`, se resuelve con tags en el handler) de una validación de **negocio** (requiere mirar el estado actual de los datos, y por eso vive en el `service`, no en el handler ni en el repository) — la misma separación de capas ya vista en la Clase 2.
+**Evalúa:** distinguir claramente una validación de **forma** (`binding`, se resuelve con tags en el handler) de una validación de **negocio** (requiere mirar el estado actual de los datos, y por eso vive en `service.go`, no en `handler.go` ni en `repository.go`) — la misma separación de responsabilidades ya vista en la Clase 2.
 
 **Checklist:**
 - [ ] Un nombre duplicado con distinta capitalización (`"Mouse"` vs `"mouse"`) también es rechazado
 - [ ] El código de estado distingue los tres casos: 201, 400, 409 (no todo cae en 400)
-- [ ] La regla de negocio vive en `internal/service`, no en `internal/handler`
+- [ ] La regla de negocio vive en `service.go`, no en `handler.go`
 
 ---
 

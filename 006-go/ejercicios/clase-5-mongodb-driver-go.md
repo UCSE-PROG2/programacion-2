@@ -1,6 +1,6 @@
 # Ejercicios — Clase 5: MongoDB en profundidad
 
-Ejercicios de evaluación para la [Clase 5](../README.md#clase-5--mongodb-en-profundidad). Parten de `MongoProductoRepository` ya conectado desde la Clase 2, y retoman con operadores reales de Mongo varios casos que en la Clase 3 se resolvieron "a mano" trayendo todo a memoria.
+Ejercicios de evaluación para la [Clase 5](../README.md#clase-5--mongodb-en-profundidad). Parten de `producto.MongoRepository` ya conectado desde la Clase 2, y retoman con operadores reales de Mongo varios casos que en la Clase 3 se resolvieron "a mano" trayendo todo a memoria.
 
 Estos ejercicios van más allá del CRUD básico del driver — cubren operadores de query, paginación real, índices y testing de integración.
 
@@ -12,9 +12,9 @@ Extender la búsqueda más allá de por `ID` o `Nombre`.
 
 **Requerimientos:**
 
-1. Agregar a `ProductoRepository` un método `FindByPrecioRango(ctx context.Context, min, max float64) ([]model.Producto, error)`.
-2. En `MongoProductoRepository`, implementarlo armando un filtro `bson.M` que combine `$gte` y `$lte` según corresponda. Si `min` es `0`, no debería restringir el límite inferior (armar el filtro condicionalmente, no siempre con ambos operadores).
-3. Si existe `InMemoryProductoRepository` (Clase 4, Ejercicio 6, opcional), implementarlo también ahí, recorriendo el mapa con un `for` — sin usar Mongo. Si no se hizo ese ejercicio opcional, alcanza con `MongoProductoRepository`.
+1. Agregar a `Repository` (paquete `producto`) un método `FindByPrecioRango(ctx context.Context, min, max float64) ([]Producto, error)`.
+2. En `MongoRepository`, implementarlo armando un filtro `bson.M` que combine `$gte` y `$lte` según corresponda. Si `min` es `0`, no debería restringir el límite inferior (armar el filtro condicionalmente, no siempre con ambos operadores).
+3. Si existe `InMemoryRepository` (Clase 4, Ejercicio 6, opcional), implementarlo también ahí, recorriendo el mapa con un `for` — sin usar Mongo. Si no se hizo ese ejercicio opcional, alcanza con `MongoRepository`.
 4. Exponer `GET /productos?precioMin=&precioMax=` en el handler, usando este método (ambos query params opcionales).
 5. Probar contra Mongo real: cargar al menos 5 productos con precios distintos, y verificar que el filtro devuelve exactamente los esperados en 3 casos (solo mínimo, solo máximo, ambos).
 
@@ -34,7 +34,7 @@ La paginación de la Clase 3 era manual, sobre un slice completo ya en memoria. 
 **Requerimientos:**
 
 1. Agregar `FindAllPaginado(ctx context.Context, pagina, tamanio int) (productos []Producto, total int64, err error)` a la interfaz.
-2. Implementarlo en `MongoProductoRepository` usando `options.Find().SetSkip(...).SetLimit(...)` para traer solo la página pedida, y `coll.CountDocuments(ctx, bson.M{})` para el total (dos operaciones contra Mongo, no una).
+2. Implementarlo en `MongoRepository` usando `options.Find().SetSkip(...).SetLimit(...)` para traer solo la página pedida, y `coll.CountDocuments(ctx, bson.M{})` para el total (dos operaciones contra Mongo, no una).
 3. Exponer `GET /productos?pagina=&tamanio=` reutilizando este método (reemplaza o convive con el filtro por precio del Ejercicio 1, a elección — documentar la decisión).
 4. Verificar contra Mongo real con al menos 12 productos cargados: pedir la página 2 con tamaño 5 y confirmar que trae los productos correctos (ni los de la página 1 ni los de la página 3) y que `total` es 12.
 
@@ -54,8 +54,8 @@ Reemplazar la validación manual de nombre duplicado (Clase 4) por una garantía
 **Requerimientos:**
 
 1. Al inicializar la conexión (o en un script/función aparte), crear un índice único sobre el campo `nombre` de la colección `productos`, usando `coll.Indexes().CreateOne(ctx, ...)` con `options.Index().SetUnique(true)`.
-2. Modificar `MongoProductoRepository.Create` para detectar específicamente el error de clave duplicada (usar la función del driver correspondiente para identificarlo, no comparar el mensaje de error como string) y devolver un error de negocio propio y claro (ej: `"ya existe un producto con ese nombre"`), distinguible de cualquier otro error del driver.
-3. Quitar (o dejar como comentario explicando por qué ya no hace falta) la validación manual de nombre duplicado que estaba en `ProductoService.Crear` desde la Clase 4 — ahora la garantía la da la base, no el service.
+2. Modificar `MongoRepository.Create` para detectar específicamente el error de clave duplicada (usar la función del driver correspondiente para identificarlo, no comparar el mensaje de error como string) y devolver un error de negocio propio y claro (ej: `"ya existe un producto con ese nombre"`), distinguible de cualquier otro error del driver.
+3. Quitar (o dejar como comentario explicando por qué ya no hace falta) la validación manual de nombre duplicado que estaba en `Service.Crear` desde la Clase 4 — ahora la garantía la da la base, no el service.
 4. Un test de integración contra Mongo real: crear un producto, intentar crear otro con el mismo nombre, y verificar que el segundo intento falla con el error de negocio esperado (no con un error crudo del driver ni con un 500 genérico si se prueba vía HTTP).
 
 **Evalúa:** mover una regla de integridad de la capa de aplicación a la base cuando la base la puede garantizar de forma más confiable (dos requests concurrentes podrían ambas pasar la validación manual del `service` antes de que ninguna termine de escribir — el índice único no tiene esa condición de carrera), e identificar errores específicos del driver en vez de comparar strings.
@@ -73,7 +73,7 @@ Una operación de escritura masiva, distinta a los 5 métodos CRUD ya conocidos.
 
 **Requerimientos:**
 
-1. Escribir una función (puede vivir en `repository` como un método extra, o en un mini binario separado `cmd/migrar-precios/main.go`) que reciba un porcentaje de aumento y un precio tope, y aplique el aumento **solo** a los productos con `precio` menor a ese tope.
+1. Escribir una función (puede vivir en `repository.go` como un método extra, o en un mini binario separado `cmd/migrar-precios/main.go`) que reciba un porcentaje de aumento y un precio tope, y aplique el aumento **solo** a los productos con `precio` menor a ese tope.
 2. Implementarla con `coll.UpdateMany(ctx, filtro, update)`, usando el operador `$mul` para multiplicar el precio por `(1 + porcentaje/100)` directamente en la base (no traer todos los documentos, modificarlos en Go, y guardarlos uno por uno).
 3. La función debe devolver cuántos documentos fueron modificados (`UpdateResult.ModifiedCount`).
 4. Probar contra Mongo real: cargar productos con precios variados, aplicar un aumento del 10% a los menores a determinado valor, y verificar en `mongosh` que solo esos cambiaron y con el valor correcto.
@@ -93,7 +93,7 @@ Un test que efectivamente habla con la base (no un fake, a diferencia del Ejerci
 
 **Requerimientos:**
 
-1. En un archivo `mongo_producto_repository_test.go`, escribir un `TestMongoProductoRepository_CRUD` que se conecte a una base de **test** (ej: `productos_test`, distinta de la de desarrollo) usando `mongo.Connect` con `context.WithTimeout`.
+1. En un archivo `repository_integration_test.go` (mismo paquete `producto`), escribir un `TestMongoRepository_CRUD` que se conecte a una base de **test** (ej: `gestock_test`, distinta de la de desarrollo) usando `mongo.Connect` con `context.WithTimeout`.
 2. El test debe: insertar un producto con `Create`, buscarlo con `FindByID` y verificar que los datos coinciden, actualizarlo con `Update` y verificar el cambio, y borrarlo con `Delete`.
 3. Usar `t.Cleanup(...)` para garantizar que el documento de test se borra al final **incluso si el test falla a mitad de camino** (evitar que quede basura en la base entre corridas).
 4. Documentar en un comentario al inicio del archivo qué hace falta tener corriendo antes de ejecutar este test (el contenedor de Mongo vía Docker) — este tipo de test no debería correr en un `go test ./...` normal sin ese requisito previo (opcional: investigar y aplicar un build tag o una variable de entorno para excluirlo por defecto).

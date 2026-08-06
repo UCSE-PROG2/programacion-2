@@ -1,6 +1,6 @@
 # Ejercicios — Clase 2: Gin, MongoDB y arquitectura en capas
 
-Ejercicios de evaluación para la [Clase 2](../README.md#clase-2--arrancás-el-tp-gin-mongodb-y-arquitectura-en-capas). Parten del esqueleto ya armado en la práctica de esa clase: `handler` → `service` → `ProductoRepository` (interfaz) → `MongoProductoRepository`, con `router.Group("/productos")`, DI manual en `main.go`, y `docker-compose.yml` levantando Mongo y la API.
+Ejercicios de evaluación para la [Clase 2](../README.md#clase-2--arrancás-el-tp-gin-mongodb-y-arquitectura-en-capas). Parten del esqueleto ya armado en la práctica de esa clase: paquete `internal/producto/` con `handler.go` → `service.go` → `Repository` (interfaz) → `MongoRepository`, `router.Group("/productos")`, DI manual en `main.go`, y `docker-compose.yml` levantando Mongo y la API.
 
 Estos ejercicios evalúan si el patrón se entendió lo suficiente como para **replicarlo** en un dominio nuevo y verificar que la persistencia y la orquestación con Docker funcionan de verdad — no la profundidad de Gin ni de Mongo (eso son las Clases 3 y 5).
 
@@ -12,17 +12,18 @@ Demostrar que la arquitectura en capas no es "magia" atada a `Producto`.
 
 **Requerimientos:**
 
-1. Agregar una entidad nueva, `Categoria{ID, Nombre string}`, replicando **la misma estructura completa**: `model`, interfaz `CategoriaRepository` (con los mismos 5 métodos que `ProductoRepository`, adaptados), `MongoCategoriaRepository`, `CategoriaService`, `CategoriaHandler`.
+1. Crear un paquete nuevo `internal/categoria/`, replicando **la misma estructura completa** que `internal/producto/`: `model.go` (`Categoria{ID, Nombre string}`), `repository.go` (interfaz `Repository` con los mismos 5 métodos, más `MongoRepository`), `service.go` (`Service`), `handler.go` (`Handler` + `RegisterRoutes`).
 2. Registrar las rutas bajo su propio `router.Group("/categorias")`, independiente del de `/productos`, contra su propia colección de Mongo (`categorias`).
-3. Cablear ambos repositories, services y handlers en `main.go`, dejando el grafo de dependencias completo y legible.
-4. El código de `Producto` no debe modificarse — es una prueba de que agregar un dominio nuevo no rompe ni toca el existente.
+3. Cablear ambos repositories, services y handlers en `main.go` (`producto.New...` y `categoria.New...`), dejando el grafo de dependencias completo y legible.
+4. El código de `internal/producto/` no debe modificarse — es una prueba de que agregar un dominio nuevo no rompe ni toca el existente.
 
-**Evalúa:** que el patrón de capas se generalizó, no se memorizó para un solo caso; disciplina de nombres y estructura de carpetas consistente entre dos dominios paralelos.
+**Evalúa:** que el patrón de paquete por dominio se generalizó, no se memorizó para un solo caso; disciplina de nombres de archivo consistente entre dos paquetes paralelos.
 
 **Checklist:**
-- [ ] `internal/repository`, `internal/service`, `internal/handler` tienen ahora archivos para `producto` y para `categoria`, sin mezclarse en el mismo archivo
+- [ ] `internal/producto/` e `internal/categoria/` son dos paquetes Go independientes, cada uno con sus propios `model.go`/`repository.go`/`service.go`/`handler.go`
 - [ ] `GET /categorias` y `GET /productos` funcionan de forma independiente, contra colecciones distintas
-- [ ] Ningún archivo de `Producto` fue modificado
+- [ ] Ningún archivo de `internal/producto/` fue modificado
+- [ ] `Repository`, `Service` y `Handler` se llaman igual en ambos paquetes (no `CategoriaRepository`/`ProductoRepository`) — el nombre del paquete ya da el contexto
 
 ---
 
