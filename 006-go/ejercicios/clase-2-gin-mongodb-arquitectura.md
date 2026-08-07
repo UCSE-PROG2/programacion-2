@@ -12,18 +12,19 @@ Demostrar que la arquitectura en capas no es "magia" atada a `Producto`.
 
 **Requerimientos:**
 
-1. Crear un paquete nuevo `internal/categoria/`, replicando **la misma estructura completa** que `internal/producto/`: `model.go` (`Categoria{ID, Nombre string}`), `repository.go` (interfaz `Repository` con los mismos 5 métodos, más `MongoRepository`), `service.go` (`Service`), `handler.go` (`Handler` + `RegisterRoutes`).
+1. Crear un paquete nuevo `internal/categoria/`, replicando **la misma estructura completa** que `internal/producto/`: `model.go` (`Categoria{ID bson.ObjectID, Nombre string}`, tags `bson`), `dto.go` (`CategoriaDTO{ID, Nombre string}`, tags `json`/`binding`, con `ToDTO`/`ToModel`), `repository.go` (interfaz `Repository` con los mismos 5 métodos, más `MongoRepository`), `service.go` (`Service`), `handler.go` (`Handler` + `RegisterRoutes`).
 2. Registrar las rutas bajo su propio `router.Group("/categorias")`, independiente del de `/productos`, contra su propia colección de Mongo (`categorias`).
 3. Cablear ambos repositories, services y handlers en `main.go` (`producto.New...` y `categoria.New...`), dejando el grafo de dependencias completo y legible.
 4. El código de `internal/producto/` no debe modificarse — es una prueba de que agregar un dominio nuevo no rompe ni toca el existente.
 
-**Evalúa:** que el patrón de paquete por dominio se generalizó, no se memorizó para un solo caso; disciplina de nombres de archivo consistente entre dos paquetes paralelos.
+**Evalúa:** que el patrón de paquete por dominio (y la separación modelo/DTO) se generalizó, no se memorizó para un solo caso; disciplina de nombres de archivo consistente entre dos paquetes paralelos.
 
 **Checklist:**
-- [ ] `internal/producto/` e `internal/categoria/` son dos paquetes Go independientes, cada uno con sus propios `model.go`/`repository.go`/`service.go`/`handler.go`
+- [ ] `internal/producto/` e `internal/categoria/` son dos paquetes Go independientes, cada uno con sus propios `model.go`/`dto.go`/`repository.go`/`service.go`/`handler.go`
 - [ ] `GET /categorias` y `GET /productos` funcionan de forma independiente, contra colecciones distintas
 - [ ] Ningún archivo de `internal/producto/` fue modificado
 - [ ] `Repository`, `Service` y `Handler` se llaman igual en ambos paquetes (no `CategoriaRepository`/`ProductoRepository`) — el nombre del paquete ya da el contexto
+- [ ] `service.go` y `repository.go` de `categoria` trabajan con `Categoria` (el modelo), no con `CategoriaDTO`
 
 ---
 

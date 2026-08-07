@@ -91,22 +91,23 @@ El ejercicio central para demostrar por qué el `service` depende de una interfa
 
 ---
 
-## Ejercicio 5 — DTO de salida en el handler
+## Ejercicio 5 — Un segundo DTO, específico para la respuesta
 
-Practicar por qué el DTO vive junto al handler, no en capas inferiores.
+`dto.go` ya existe desde la Clase 2, con `ProductoDTO` sirviendo tanto de entrada (`POST`/`PUT`) como de salida (`GET`). Este ejercicio practica que un dominio puede necesitar **más de un** DTO cuando entrada y salida dejan de tener la misma forma.
 
 **Requerimientos:**
 
-1. En un archivo nuevo `dto.go`, dentro del mismo paquete `producto`, crear un struct `Respuesta` con: `Nombre`, `Precio`, y un campo nuevo calculado `Slug` (versión del nombre en minúsculas y con espacios reemplazados por guiones, ej: `"Teclado Mecánico"` → `"teclado-mecanico"`) — sin exponer el `ID` interno del modelo.
-2. Escribir una función `Producto` → `Respuesta` en ese mismo `dto.go` (no en `service.go` ni en `repository.go`).
-3. Modificar `GET /productos` y `GET /productos/:id` (en `handler.go`) para responder con `Respuesta` en vez de `Producto` directo.
-4. `POST` y `PUT` pueden seguir recibiendo/devolviendo `Producto` tal cual, o aplicarles el mismo criterio — decidir y justificar brevemente en un comentario.
+1. En el mismo `dto.go`, agregar un segundo struct `ProductoRespuesta` con: `Nombre`, `Precio`, y un campo nuevo calculado `Slug` (versión del nombre en minúsculas y con espacios reemplazados por guiones, ej: `"Teclado Mecánico"` → `"teclado-mecanico"`) — sin exponer el `ID` interno del modelo.
+2. Escribir un método `(p Producto) ToRespuesta() ProductoRespuesta`, análogo a `ToDTO()` pero calculando también el `Slug`, en el mismo `dto.go` (no en `service.go` ni en `repository.go`).
+3. Modificar `GET /productos` y `GET /productos/:id` (en `handler.go`) para responder con `ProductoRespuesta` en vez de `ProductoDTO`.
+4. `POST` y `PUT` siguen usando `ProductoDTO` como hasta ahora — son datos de **entrada**, no tiene sentido pedirles un `Slug` que todavía no existe.
 
-**Evalúa:** separación entre el modelo interno de persistencia y lo que efectivamente viaja por la API, ubicación correcta de la lógica de mapeo (una decisión de presentación, no de negocio ni de datos) — aunque ya no haya una carpeta `dto/` separada, la responsabilidad se mantiene en su propio archivo.
+**Evalúa:** que la separación modelo/DTO no termina en "un DTO por entidad" — cuando lo que se lee y lo que se escribe tienen forma distinta, son dos structs distintos, y la lógica de mapeo de cada uno sigue viviendo en `dto.go`, nunca en `service.go` ni en `repository.go`.
 
 **Checklist:**
-- [ ] El JSON de `GET /productos` ya no incluye el campo `id` crudo del modelo (o lo reemplaza según lo decidido), pero sí incluye `slug`
-- [ ] `service.go` y `repository.go` siguen trabajando exclusivamente con `Producto`, sin conocer `Respuesta`
+- [ ] El JSON de `GET /productos` ya no incluye el campo `id` (o lo reemplaza según lo decidido), pero sí incluye `slug`
+- [ ] `service.go` y `repository.go` siguen trabajando exclusivamente con `Producto`, sin conocer `ProductoRespuesta`
+- [ ] `POST /productos` sigue aceptando el mismo body que antes (vía `ProductoDTO`), sin pedir `slug`
 - [ ] La función de mapeo tiene al menos un test que verifique el cálculo del `slug`
 
 ---
