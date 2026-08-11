@@ -1,0 +1,257 @@
+{
+  "info": {
+    "name": "Biblioteca API — Ejemplo Unidad 6 (Go)",
+    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Clases 1 y 2 de la Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB.\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. \"09 - Eliminar libro\" borra ese libro; \"10 - Buscar libro eliminado (404)\" confirma que ya no existe.\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "libro_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01 - Crear libro",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201 Created', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('devuelve id', () => pm.expect(body.id).to.be.a('string').and.not.empty);",
+              "pm.collectionVariables.set('libro_id', body.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Cien años de soledad\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474728\",\n  \"anio_edicion\": 1967,\n  \"disponible\": true\n}"
+        },
+        "url": { "raw": "{{base_url}}/libros", "host": ["{{base_url}}"], "path": ["libros"] },
+        "description": "POST /libros — alta de un libro. Gin valida el body con los tags `binding:\"...\"` de LibroDTO antes de llegar al service."
+      }
+    },
+    {
+      "name": "02 - Crear libro (segundo, para listar/buscar)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status 201 Created', () => pm.response.to.have.status(201));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"El coronel no tiene quien le escriba\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474711\",\n  \"anio_edicion\": 1961,\n  \"disponible\": false\n}"
+        },
+        "url": { "raw": "{{base_url}}/libros", "host": ["{{base_url}}"], "path": ["libros"] },
+        "description": "Segundo libro del mismo autor, con disponible=false — sirve para probar el filtro de /libros/buscar."
+      }
+    },
+    {
+      "name": "03 - Crear libro inválido (400 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"autor\": \"Autor sin título\",\n  \"isbn\": \"000-0000000000\",\n  \"anio_edicion\": -5,\n  \"disponible\": true\n}"
+        },
+        "url": { "raw": "{{base_url}}/libros", "host": ["{{base_url}}"], "path": ["libros"] },
+        "description": "Falta \"titulo\" (binding:\"required\") y \"anio_edicion\" es negativo (binding:\"gt=0\") — demuestra la validación de Gin (Clase 3)."
+      }
+    },
+    {
+      "name": "04 - Listar todos los libros",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('devuelve un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/libros", "host": ["{{base_url}}"], "path": ["libros"] },
+        "description": "GET /libros — lista completa."
+      }
+    },
+    {
+      "name": "05 - Buscar por autor (query string)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('todos los resultados son del autor pedido', () => body.forEach(l => pm.expect(l.autor).to.eql('Gabriel García Márquez')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/buscar?autor=Gabriel García Márquez",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "buscar"],
+          "query": [{ "key": "autor", "value": "Gabriel García Márquez" }]
+        },
+        "description": "GET /libros/buscar?autor=... — filtro por query string (c.Query, Clase 3), a diferencia de :id que es parámetro de path."
+      }
+    },
+    {
+      "name": "06 - Buscar solo disponibles",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('todos los resultados están disponibles', () => body.forEach(l => pm.expect(l.disponible).to.eql(true)));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/buscar?disponible=true",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "buscar"],
+          "query": [{ "key": "disponible", "value": "true" }]
+        },
+        "description": "GET /libros/buscar?disponible=true — usa c.DefaultQuery internamente para el caso en que el parámetro no venga."
+      }
+    },
+    {
+      "name": "07 - Obtener libro por id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('id coincide', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('libro_id')));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/{{libro_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "{{libro_id}}"]
+        },
+        "description": "GET /libros/:id — usa el id guardado por \"01 - Crear libro\" (c.Param, Clase 3)."
+      }
+    },
+    {
+      "name": "08 - Actualizar libro (marcar prestado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('disponible quedó en false', () => pm.expect(pm.response.json().disponible).to.eql(false));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Cien años de soledad\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474728\",\n  \"anio_edicion\": 1967,\n  \"disponible\": false\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/libros/{{libro_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "{{libro_id}}"]
+        },
+        "description": "PUT /libros/:id — simula el préstamo del libro (disponible: true → false)."
+      }
+    },
+    {
+      "name": "09 - Eliminar libro",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status 204 No Content', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{base_url}}/libros/{{libro_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "{{libro_id}}"]
+        },
+        "description": "DELETE /libros/:id — 204 No Content sin body, código estándar para un delete exitoso (Clase 3)."
+      }
+    },
+    {
+      "name": "10 - Buscar libro eliminado (404 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 404 Not Found', () => pm.response.to.have.status(404));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/{{libro_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "{{libro_id}}"]
+        },
+        "description": "Confirma que el libro eliminado en el paso anterior ya no existe."
+      }
+    }
+  ]
+}

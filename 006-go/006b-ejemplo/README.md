@@ -1,0 +1,124 @@
+# 006b-ejemplo — API de una Biblioteca (Go + Gin + MongoDB)
+
+CRUD de `Libro` con Gin + MongoDB, misma arquitectura en capas que el TP
+(`producto` → acá `libro`). Ver `api/cmd/api/main.go` para el detalle de
+Docker y `internal/libro/` para el código.
+
+## Índice
+
+1. [Setup del entorno (VS Code + debug)](#setup-del-entorno-vs-code--debug)
+2. [Dependencias del proyecto (`go get`)](#dependencias-del-proyecto-go-get)
+3. [Cómo correrlo](#cómo-correrlo)
+4. [Endpoints](#endpoints)
+5. [Postman](#postman)
+
+---
+
+## Setup del entorno (VS Code + debug)
+
+1. **Go instalado** (ver Clase 1 del readme de la unidad):
+
+   - macOS:
+     ```bash
+     brew install go
+     ```
+   - Windows: descargar el instalador `.msi` desde [go.dev/dl](https://go.dev/dl/)
+     y correrlo (agrega Go al `PATH` automáticamente), o con `winget`:
+     ```powershell
+     winget install GoLang.Go
+     ```
+
+   Verificar en cualquier plataforma:
+   ```bash
+   go version
+   ```
+
+2. **Extensión de Go para VS Code**:
+   ```bash
+   code --install-extension golang.go
+   ```
+   (o desde el panel de extensiones: buscar `Go`, del publisher *Go Team at
+   Google*, `golang.go`).
+
+3. **Herramientas de la toolchain** (`gopls` — language server, `dlv` —
+   debugger, más linters). Abrir la carpeta `api/` en VS Code, `Cmd+Shift+P` →
+   `Go: Install/Update Tools` → seleccionar todas → Enter. Equivalente por
+   CLI, si se prefiere no usar el comando de VS Code:
+   ```bash
+   go install golang.org/x/tools/gopls@latest
+   go install github.com/go-delve/delve/cmd/dlv@latest
+   ```
+
+4. **Debug**: la configuración ya está en `api/.vscode/launch.json`
+   (`Debug API (Go)`, con `MONGO_URI=mongodb://localhost:27017`). Con Mongo
+   corriendo (ver [Cómo correrlo](#cómo-correrlo), opción B) y `api/` como
+   carpeta raíz abierta en VS Code:
+   - poner un breakpoint (ej. en `handler.go`, línea de `h.service.Crear`)
+   - `F5` o panel *Run and Debug* → `Debug API (Go)`
+   - disparar el request (curl o Postman) contra `localhost:8080`
+
+## Dependencias del proyecto (`go get`)
+
+Secuencia real usada para armar `go.mod`/`go.sum` de este proyecto, parado en
+`api/`:
+
+```bash
+go mod init biblioteca/api                              # 1. crea go.mod
+go get github.com/gin-gonic/gin                          # 2. framework HTTP
+go get go.mongodb.org/mongo-driver/v2/mongo               # 3. driver de MongoDB
+go mod tidy                                                # 4. resuelve indirectas y go.sum
+```
+
+`go get` sin versión trae la última release estable de cada módulo; `go mod
+tidy` agrega las dependencias transitivas que falten y escribe sus checksums
+en `go.sum`. Para clonar este repo y volver a resolver todo desde cero (sin
+depender de que `go.sum` ya esté commiteado):
+
+```bash
+cd api
+go mod tidy
+go build ./...
+```
+
+## Cómo correrlo
+
+### Opción A — Todo con Docker
+
+```bash
+docker compose up --build     # desde 006b-ejemplo/
+```
+
+API en `http://localhost:8080`. Para bajar: `docker compose down` (`-v` para
+borrar también el volumen de datos).
+
+### Opción B — Go local + Mongo suelto (necesaria para debug)
+
+```bash
+docker run -d --name mongo-biblioteca -p 27017:27017 -v datos-biblioteca:/data/db mongo:7
+cd api
+go run ./cmd/api
+```
+
+## Endpoints
+
+| Método | Ruta | Body |
+|---|---|---|
+| `GET` | `/libros` | — |
+| `GET` | `/libros/buscar?autor=...&disponible=...` | — |
+| `GET` | `/libros/:id` | — |
+| `POST` | `/libros` | `{"titulo","autor","isbn","anio_edicion","disponible"}` |
+| `PUT` | `/libros/:id` | ídem |
+| `DELETE` | `/libros/:id` | — |
+
+```bash
+curl -X POST http://localhost:8080/libros \
+  -H "Content-Type: application/json" \
+  -d '{"titulo":"Cien años de soledad","autor":"Gabriel García Márquez","isbn":"978-0307474728","anio_edicion":1967,"disponible":true}'
+```
+
+## Postman
+
+`postman/Biblioteca-API.postman_collection.json` — 10 requests en orden
+(crear → listar → buscar → actualizar → eliminar → 404), con tests
+automáticos y `base_url` precargada en `http://localhost:8080`. Import →
+correr con la API arriba.
