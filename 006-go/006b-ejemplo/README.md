@@ -99,6 +99,20 @@ cd api
 go run ./cmd/api
 ```
 
+### Puerto 8080 ocupado
+
+Si al correr la API falla porque el puerto 8080 ya está tomado (por ejemplo,
+quedó un `go run` anterior colgado), matar el proceso que lo tiene:
+
+- macOS/Linux:
+  ```bash
+  lsof -ti:8080 | xargs kill -9
+  ```
+- Windows (PowerShell):
+  ```powershell
+  Stop-Process -Id (Get-NetTCPConnection -LocalPort 8080).OwningProcess -Force
+  ```
+
 ## Endpoints
 
 | Método | Ruta | Body |
