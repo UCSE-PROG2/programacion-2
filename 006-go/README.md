@@ -8,10 +8,10 @@ Material de apoyo para la **Unidad 6** de **Programación 2** — Ingeniería en
 
 1. [Clase 1 — Introducción a Go](#clase-1--introducción-a-go)
 2. [Clase 2 — Arrancás el TP: Gin, MongoDB y arquitectura en capas](#clase-2--arrancás-el-tp-gin-mongodb-y-arquitectura-en-capas)
-3. [Clase 3 — Gin en profundidad](#clase-3--gin-en-profundidad)
-4. [Clase 4 — Arquitectura, inyección de dependencias y testing](#clase-4--arquitectura-inyección-de-dependencias-y-testing)
-5. [Clase 5 — MongoDB en profundidad](#clase-5--mongodb-en-profundidad)
-6. [Clase 6 — JWT, bcrypt, middlewares y autorización por rol](#clase-6--jwt-bcrypt-middlewares-y-autorización-por-rol)
+3. [Clase 3 — JWT, bcrypt, middlewares y autorización por rol](#clase-3--jwt-bcrypt-middlewares-y-autorización-por-rol)
+4. [Clase 4 — MongoDB en profundidad](#clase-4--mongodb-en-profundidad)
+5. [Clase 5 — Gin en profundidad](#clase-5--gin-en-profundidad)
+6. [Clase 6 — Arquitectura, inyección de dependencias y testing](#clase-6--arquitectura-inyección-de-dependencias-y-testing)
 7. [Ejercicios prácticos](#ejercicios-prácticos)
 8. [Recursos recomendados](#recursos-recomendados)
 
@@ -540,7 +540,7 @@ flowchart TB
 | Acoplamiento | El tipo debe conocer la interfaz al definirse | El tipo no necesita saber que existe la interfaz |
 | Verificación | En la declaración de la clase | En el punto donde se usa el valor como esa interfaz (compile-time) |
 
-> **Por qué importa para lo que sigue**: en la próxima clase vamos a definir un `Repository` como interfaz (dentro del paquete `producto`) con una única implementación (contra MongoDB), sin que esa implementación "sepa" que existe una interfaz — simplemente va a tener los métodos correctos. Más adelante (Clase 4) vamos a ver por qué ese desacople es tan valioso: permite testear el `service` reemplazando el repository real por uno de prueba, sin tocar una línea de la interfaz.
+> **Por qué importa para lo que sigue**: en la próxima clase vamos a definir un `Repository` como interfaz (dentro del paquete `producto`) con una única implementación (contra MongoDB), sin que esa implementación "sepa" que existe una interfaz — simplemente va a tener los métodos correctos. Más adelante (Clase 6) vamos a ver por qué ese desacople es tan valioso: permite testear el `service` reemplazando el repository real por uno de prueba, sin tocar una línea de la interfaz.
 
 Para forzar en compile-time que un tipo cumple una interfaz (útil como documentación o chequeo temprano), se usa una asignación en blanco:
 
@@ -552,7 +552,7 @@ var _ Figura = Circulo{} // si Circulo deja de tener Area(), esto no compila
 
 ## Clase 2 — Arrancás el TP: Gin, MongoDB y arquitectura en capas
 
-Con el lenguaje base ya cubierto (Clase 1: sintaxis, structs, punteros, interfaces), esta clase arma de punta a punta el esqueleto real del Trabajo Práctico: una API en capas, con Gin y persistencia en MongoDB, corriendo en Docker. El objetivo es terminar la clase con el proyecto compilando, levantado con `docker compose up`, y un CRUD real persistiendo datos — **no** con una explicación exhaustiva de cada pieza. Gin se profundiza en la Clase 3, la arquitectura y el porqué de cada decisión en la Clase 4, y MongoDB en detalle en la Clase 5.
+Con el lenguaje base ya cubierto (Clase 1: sintaxis, structs, punteros, interfaces), esta clase arma de punta a punta el esqueleto real del Trabajo Práctico: una API en capas, con Gin y persistencia en MongoDB, corriendo en Docker. El objetivo es terminar la clase con el proyecto compilando, levantado con `docker compose up`, y un CRUD real persistiendo datos — **no** con una explicación exhaustiva de cada pieza. Gin se profundiza en la Clase 5, la arquitectura y el porqué de cada decisión en la Clase 6, y MongoDB en detalle en la Clase 4.
 
 Se usa `Producto` como entidad guía a lo largo de toda la unidad — una de las entidades centrales de Gestock — con los campos reales del enunciado.
 
@@ -645,7 +645,7 @@ api/
 | `internal/` | El **toolchain de Go la hace cumplir**: cualquier paquete bajo `internal/` solo puede ser importado por código dentro del mismo módulo — otro proyecto no podría importar `api/internal/producto` aunque quisiera |
 | `internal/producto/` | Es un **paquete Go** (`package producto`): todos los `.go` de la carpeta comparten paquete. Nada te obliga a separar `model.go`/`dto.go`/`repository.go`/`service.go`/`handler.go` en archivos distintos — se hace por prolijidad, no porque el compilador lo exija |
 
-Dentro del paquete, las responsabilidades de siempre siguen existiendo — el **por qué** de esta separación (ahora en archivos, no en carpetas) se retoma con más detalle en la Clase 4:
+Dentro del paquete, las responsabilidades de siempre siguen existiendo — el **por qué** de esta separación (ahora en archivos, no en carpetas) se retoma con más detalle en la Clase 6:
 
 | Responsabilidad | Archivo | Qué hace |
 |------|---------|------------------|
@@ -678,7 +678,7 @@ type Producto struct {
 }
 ```
 
-> Los tags `bson:"..."` controlan cómo se serializa/deserializa el struct al hablar con Mongo (equivalente a lo que hacen los tags `json:"..."` con JSON, pero para el formato binario del driver). Se explican en profundidad en la Clase 5.
+> Los tags `bson:"..."` controlan cómo se serializa/deserializa el struct al hablar con Mongo (equivalente a lo que hacen los tags `json:"..."` con JSON, pero para el formato binario del driver). Se explican en profundidad en la Clase 4.
 
 ### El DTO: qué viaja por HTTP
 
@@ -694,7 +694,7 @@ type ProductoDTO struct {
 }
 ```
 
-> Los tags `json:"..."` controlan cómo se serializa/deserializa el struct; los tags `binding:"..."` se usan para validar el body de un request con Gin. Ambos se explican en profundidad en la Clase 3 — por ahora alcanza con saber que están ahí y que van a hacer lo esperado.
+> Los tags `json:"..."` controlan cómo se serializa/deserializa el struct; los tags `binding:"..."` se usan para validar el body de un request con Gin. Ambos se explican en profundidad en la Clase 5 — por ahora alcanza con saber que están ahí y que van a hacer lo esperado.
 
 `dto.go` también es el lugar natural para las funciones que convierten entre los dos mundos — `Producto` (Mongo) y `ProductoDTO` (HTTP):
 
@@ -920,7 +920,7 @@ func (s *Service) Eliminar(ctx context.Context, id string) error {
 }
 ```
 
-Por ahora el service solo delega en el repository — no tiene reglas de negocio propias todavía. En la Clase 4 le vamos a agregar validaciones reales (ej. no permitir dos productos con el mismo nombre), que es donde un service empieza a ganar su lugar frente a delegar directo del handler al repository.
+Por ahora el service solo delega en el repository — no tiene reglas de negocio propias todavía. En la Clase 6 le vamos a agregar validaciones reales (ej. no permitir dos productos con el mismo nombre), que es donde un service empieza a ganar su lugar frente a delegar directo del handler al repository.
 
 ### El handler — con Gin
 
@@ -1108,509 +1108,7 @@ Con un `Dockerfile` mínimo en `api/` (build multi-stage con `golang` para compi
 
 ---
 
-## Clase 3 — Gin en profundidad
-
-La Clase 2 armó un handler funcional usando `c.Param`, `c.JSON` y `c.ShouldBindJSON` sin detenerse a explicar cada uno. Esta clase vuelve sobre esas piezas y agrega lo que quedó afuera: por qué existe Gin, cómo se extraen parámetros de las dos formas posibles, cómo funcionan los tags de validación en detalle, y qué código de estado corresponde a cada situación.
-
-### Por qué Gin
-
-En Go no hay un framework "oficial" incluido para REST como Spring Boot en Java. La librería estándar (`net/http`) da lo mínimo indispensable:
-
-```go
-func productosHandler(w http.ResponseWriter, r *http.Request) {
-	productos := []ProductoDTO{{ID: "1", Nombre: "Laptop", Precio: 1500.0}}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(productos)
-}
-
-func main() {
-	http.HandleFunc("/productos", productosHandler)
-	http.ListenAndServe(":8080", nil)
-}
-```
-
-Esto funciona, pero rápidamente se vuelve tedioso a mano:
-
-- No hay forma nativa de capturar `/productos/{id}` como parámetro — hay que parsear el path a mano.
-- No hay distinción de métodos: `productosHandler` responde igual a un GET que a un POST a menos que se chequee `r.Method` manualmente.
-- Leer y validar el body JSON y devolver errores 400 bien formados requiere repetir el mismo boilerplate en cada handler.
-- Setear el código de estado exige llamar `w.WriteHeader(...)` explícitamente antes de escribir el body.
-
-[Gin](https://github.com/gin-gonic/gin) —el framework HTTP más usado en el ecosistema Go, liviano y con un router tipo *radix tree*— automatiza exactamente ese trabajo repetitivo:
-
-| | `net/http` puro | Gin |
-|---|---|---|
-| Rutear por método + path | Manual (`if r.Method == "GET"`, parseo de path) | `router.GET(path, handler)`, `router.POST(...)`, etc. |
-| Parámetros de ruta | Manual | `c.Param("id")` |
-| Serializar JSON | `json.NewEncoder(w).Encode(...)` + `Content-Type` a mano | `c.JSON(status, data)` |
-| Parsear body JSON + validar | `json.NewDecoder(r.Body).Decode(...)` + validación manual | `c.ShouldBindJSON(&struct)` con tags `binding:"..."` |
-| Middlewares (logging, recovery) | No incluidos | `gin.Default()` ya trae logger + recovery de panics |
-| Agrupar rutas | No incluido | `router.Group("/api")` (usado desde la Clase 2) |
-
-`gin.Default()` (el que venimos usando) arma un router con logger + recovery de panics ya activados. `gin.New()` da un router vacío, sin esos middlewares, para quien los quiera configurar manualmente.
-
-### Parámetros de path vs. query string
-
-Gin distingue dos formas de recibir datos en un GET: parte del **path** (`c.Param`, ya usado en `GetByID`) o parte del **query string** (`c.Query`):
-
-```go
-// Parámetro de path: /productos/3
-router.GET("/productos/:id", func(c *gin.Context) {
-	id := c.Param("id") // "3"
-	c.JSON(http.StatusOK, gin.H{"id": id})
-})
-
-// Parámetro de query: /productos?nombre=Laptop
-router.GET("/productos", func(c *gin.Context) {
-	nombre := c.Query("nombre")               // "" si no viene
-	nombre = c.DefaultQuery("nombre", "todos") // con valor por defecto
-	c.JSON(http.StatusOK, gin.H{"filtro": nombre})
-})
-```
-
-| Método | Extrae | Ejemplo de URL |
-|--------|--------|-----------------|
-| `c.Param("id")` | Segmento de la ruta declarado como `:id` | `/productos/3` → `"3"` |
-| `c.Query("nombre")` | Query string | `/productos?nombre=Laptop` → `"Laptop"` |
-| `c.DefaultQuery("nombre", "x")` | Query string, con valor por defecto si falta | `/productos` → `"x"` |
-
-`gin.H` es simplemente un alias de Gin para `map[string]interface{}` — una forma rápida de armar un JSON ad hoc sin declarar un struct.
-
-### Tags `json:"..."` para (de)serialización
-
-Cuando un struct de Go se convierte a JSON (o viceversa), por defecto Go usa el **nombre del campo tal cual** (en mayúscula, porque tiene que estar exportado). Los tags `json:"..."` controlan ese mapeo — es exactamente lo que ya usamos en `ProductoDTO` (Clase 2, `dto.go`):
-
-```go
-type ProductoDTO struct {
-	ID     string  `json:"id,omitempty"`
-	Nombre string  `json:"nombre"`
-	Precio float64 `json:"precio"`
-}
-```
-
-| Tag | Efecto |
-|-----|--------|
-| `json:"nombre"` | El campo `Nombre` se serializa/deserializa como `"nombre"` en el JSON (minúscula) |
-| `json:"id,omitempty"` | Si el campo tiene el valor cero (`""`, `0`, `nil`...), se omite del JSON de salida |
-| `json:"-"` | El campo nunca se serializa ni deserializa |
-
-Sin el tag, `ProductoDTO{Nombre: "Mouse"}` se serializaría como `{"ID":"","Nombre":"Mouse","Precio":0}` — con mayúsculas, que no es la convención habitual de una API JSON.
-
-> Notá que `Producto` (el modelo, `model.go`) usa tags `bson:"..."`, no `json:"..."` — porque `Producto` nunca se serializa directamente a JSON, solo `ProductoDTO` lo hace. Esa es, en una frase, la razón de ser de la separación model/DTO.
-
-### Binding y validación con `c.ShouldBindJSON`
-
-`c.ShouldBindJSON` lee el body JSON del request, lo vuelca en un struct de Go, y **valida al mismo tiempo** según los tags `binding:"..."`:
-
-```go
-router.POST("/productos", func(c *gin.Context) {
-	var dto ProductoDTO
-
-	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, dto)
-})
-```
-
-| Tag `binding` | Qué valida |
-|---------------|-----------|
-| `required` | El campo no puede estar ausente ni tener el valor cero de su tipo (`""`, `0`) |
-| `gt=0` | El valor numérico debe ser mayor a 0 (*greater than*) |
-| `gte=0` / `lte=100` | Mayor o igual / menor o igual a un valor |
-| `email` | Formato de email válido |
-| `min=3` / `max=50` | Longitud mínima/máxima (strings) o valor mínimo/máximo (números) |
-
-Gin usa por debajo la librería [`go-playground/validator`](https://github.com/go-playground/validator), la misma familia de validaciones que Bean Validation en Java (`@NotBlank`, `@Positive`) pero expresada como tags de struct en vez de anotaciones separadas.
-
-> **Concepto clave**: si el JSON del body no puede parsearse (JSON inválido) o no cumple las reglas de `binding`, `ShouldBindJSON` devuelve un `error` no nulo y **no** modifica el struct de forma parcial de manera confiable — siempre hay que chequear el error antes de seguir.
-
-### Manejo de errores y códigos HTTP
-
-Gin no lanza excepciones para errores de negocio — sigue el mismo estilo de Go de **devolver errores como valores** (visto en la Clase 1). El handler decide explícitamente qué código HTTP corresponde a cada situación, usando `c.JSON(status, body)`:
-
-| Constante de `net/http` | Código | Uso típico |
-|--------------------------|--------|------------|
-| `http.StatusOK` | 200 | GET / PUT exitoso |
-| `http.StatusCreated` | 201 | POST exitoso |
-| `http.StatusNoContent` | 204 | DELETE exitoso |
-| `http.StatusBadRequest` | 400 | Datos inválidos (falla de `binding`, parámetro faltante) |
-| `http.StatusUnauthorized` | 401 | Falta autenticación o es inválida (Clase 6) |
-| `http.StatusForbidden` | 403 | Autenticado, pero sin permiso para esa acción (Clase 6) |
-| `http.StatusNotFound` | 404 | Recurso inexistente |
-| `http.StatusInternalServerError` | 500 | Error inesperado del servidor |
-
-Usar las constantes de `net/http` (`http.StatusOK`) en vez del número mágico (`200`) es la convención estándar en Go — Gin las reexpone igual pero conviene importar `net/http` para tenerlas disponibles.
-
-### `router.Group()` — organizar rutas por dominio
-
-Ya lo usamos en la Clase 2 para `/productos`; vale la pena mirarlo con más detalle porque Gestock tiene muchos dominios (`productos`, `depositos`, `usuarios`, `ordenes-compra`, ...):
-
-```go
-func RegisterRoutes(router *gin.Engine, h *Handler) {
-	productos := router.Group("/productos")
-	{
-		productos.GET("", h.List)
-		productos.GET("/:id", h.GetByID)
-		productos.POST("", h.Create)
-	}
-}
-```
-
-`router.Group("/productos")` devuelve un `*gin.RouterGroup` con el mismo set de métodos (`GET`, `POST`, etc.) que el router — cada ruta registrada ahí queda automáticamente prefijada con `/productos`. Las llaves `{ }` no tienen ningún efecto sintáctico en Go; es una convención visual de la comunidad para marcar "esto pertenece al grupo". Con una API de un solo dominio no se nota la ganancia, pero en Gestock, con `Producto`, `Deposito`, `Usuario`, etc., cada dominio registra su propio grupo (y probablemente su propio archivo `*_routes.go`) y `main.go` solo los combina.
-
-### `context.Context` en un handler de Gin
-
-`gin.Context` (con minúscula el paquete, mayúscula el tipo) es la estructura propia de Gin que agrupa el request, la response y helpers como `c.JSON` o `c.Param`. Es **distinto** del `context.Context` de la librería estándar, pero está conectado a él: todo `*gin.Context` expone el contexto del request subyacente vía `c.Request.Context()` — el mismo que ya venimos pasando al `service` y al `repository` desde la Clase 2.
-
-```go
-func handler(c *gin.Context) {
-	ctx := c.Request.Context()
-	resultado, err := operacionLenta(ctx)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, resultado)
-}
-```
-
-`context.Context` sirve para propagar **cancelación** y **timeouts** a través de una cadena de llamadas: si el cliente cierra la conexión o se agota un plazo, cualquier función que reciba ese `ctx` puede enterarse y abortar el trabajo en curso. Su importancia real se ve en la Clase 5: cada llamada al driver de MongoDB (`collection.Find(ctx, ...)`, `collection.InsertOne(ctx, ...)`) recibe este mismo contexto — si el request HTTP se cancela, la operación contra la base de datos se cancela con él.
-
----
-
-## Clase 4 — Arquitectura, inyección de dependencias y testing
-
-Desde la Clase 2 venimos trabajando con handler, service, repository y model separados en archivos dentro del paquete `producto`, pero sin detenernos en el **por qué**. Esta clase revisa esa decisión de diseño, profundiza cómo se arma el grafo de dependencias a mano, y cierra con testing — algo que rinde mucho más ahora que ya existe una interfaz de repository para reemplazar por una versión de prueba.
-
-### Por qué separar responsabilidades, aunque compartan paquete
-
-Mezclar el parseo HTTP con la lógica de negocio funciona para un ejemplo chico, pero no escala: a medida que crece la lógica, el código se vuelve difícil de testear y mantener. Es el mismo problema que motivó la **arquitectura en capas** de Spring Boot en la Unidad 3 — con una diferencia: ahí Spring la impone (anotaciones, contenedor de IoC); en Go es una **convención que aplica el desarrollador**, no un mecanismo del lenguaje ni de Gin. Y como en la Clase 2 elegimos organizar por dominio (`internal/producto/`) en vez de por capa técnica, acá la separación ya ni siquiera la sostienen carpetas distintas — la sostiene la disciplina de mantener cada responsabilidad en su archivo.
-
-| Responsabilidad | Archivo (paquete `producto`) | Equivalente en Spring Boot (Unidad 3) |
-|------|------------------|----------------------------------------|
-| **handler** | `handler.go` — recibe la request HTTP, la parsea (`ShouldBindJSON`), llama al service, arma la response y el código de estado | `@RestController` |
-| **service** | `service.go` — lógica de negocio: reglas que no son ni HTTP ni persistencia | `@Service` |
-| **repository** | `repository.go` — acceso a datos, definido como interfaz + implementación concreta | `@Repository` / `JpaRepository` |
-| **model** | `model.go` — el struct que se persiste en Mongo (`Producto`, con tags `bson`) | `@Entity` |
-| **dto** | `dto.go` — el struct que viaja por HTTP (`ProductoDTO`, con tags `json`/`binding`) y su conversión hacia/desde `Producto` | Clases DTO / records |
-
-> **Concepto clave**: el handler no debería saber cómo se guardan los datos, y el repository no debería saber que existe HTTP. Si un repository necesitara devolver un `http.StatusNotFound`, algo está mal ubicado — y como vimos en la Clase 2, acá nada te lo impide a nivel de compilador (`repository.go` podría importar Gin sin que nada se queje), así que esta regla depende de disciplina, no de la estructura de carpetas.
-
-`internal/` no es solo una convención de nombres: como se vio en la Clase 2, el **toolchain de Go la hace cumplir** a nivel de módulo (nadie fuera del proyecto puede importar `internal/producto`). Es la forma que tiene Go de decir "esto es un detalle de implementación", algo que Java (donde todo vive bajo `src/main/java/...` sin esa barrera) solo logra a medias con `package-private`. Lo que `internal/` no separa es una entidad de otra dentro del mismo módulo — eso es lo que logra tener `producto/` y `categoria/` como paquetes Go distintos.
-
-### El repository como interfaz — por qué, no solo cómo
-
-La razón de declarar el repository como interfaz no es estética: es la misma idea de la Unidad 3 (`ProductoRepository extends JpaRepository`, donde el código del `Service` nunca sabe si por debajo hay MySQL, H2 o Postgres) llevada a Go, pero sin un framework que la genere — la escribimos a mano, apoyándonos en la satisfacción implícita de interfaces vista en la Clase 1.
-
-```mermaid
-flowchart LR
-    Client["Cliente\n(curl / Postman)"] -->|"HTTP"| Handler["producto.Handler\n(capa HTTP — Gin)"]
-    Handler --> Service["producto.Service\n(lógica de negocio)"]
-    Service -->|"depende de"| Iface["producto.Repository\n(interfaz)"]
-    Iface -.->|"implementa"| Mongo["producto.MongoRepository"]
-    Iface -.->|"implementa, solo para tests"| Fake["fakeRepository"]
-```
-
-La flecha sólida de `Service` a `Repository` es una dependencia de **interfaz**, en tiempo de compilación — aunque las cuatro cajas del diagrama vivan en el mismo paquete Go. Que hoy exista una sola implementación real (`MongoRepository`) no le quita valor al desacople: como se ve más abajo, esa misma interfaz es lo que permite testear el `service` sin tocar una base de datos real.
-
-### Inyección de dependencias manual
-
-En Spring Boot, el contenedor de IoC escanea clases anotadas (`@Service`, `@Repository`), las instancia y resuelve automáticamente qué pasarle a cada constructor (`@Autowired`). Go no tiene ese contenedor: **no hay reflexión mágica armando el grafo de objetos**. La inyección de dependencias sigue siendo el mismo patrón — una clase recibe sus dependencias desde afuera en vez de crearlas ella misma — pero el cableado se escribe a mano, explícitamente, en un solo lugar: `main.go` (tal como lo armamos en la Clase 2).
-
-| | Spring Boot (`@Autowired` / constructor injection) | Go (manual) |
-|---|---|---|
-| Quién arma los objetos | El contenedor de IoC, en tiempo de arranque, vía reflexión | El desarrollador, explícitamente, en `main.go` |
-| Cómo se marca una dependencia | Anotaciones (`@Service`, `@Repository`, `@Autowired`) | No hay anotaciones; se pasa por parámetro de constructor |
-| Elegir qué implementación inyectar | `@Primary` / `@Qualifier` si hay más de una | Se elige a mano qué función `New...()` se llama en `main.go` |
-| Cambiar de implementación | Cambiar la anotación o el bean configurado | Cambiar una línea en `main.go` |
-| Visibilidad del grafo de dependencias | Implícita, hay que conocer el framework para rastrearla | Explícita: todo el grafo se lee de arriba a abajo en `main.go` |
-
-> **Concepto clave**: esto **es** inyección de dependencias — el patrón no depende de un framework. Spring la automatiza con un contenedor; en Go se hace a mano, con constructores comunes y corrientes. La ventaja de la versión manual es que el grafo de objetos es explícito y se puede leer sin conocer ninguna "magia" del framework; la desventaja es que hay que escribirlo, y crece con el proyecto.
-
-### Auditoría: campos comunes a todo documento
-
-El TP exige que todo documento almacenado registre quién lo creó, quién lo modificó por última vez, y cuándo. Todos los dominios de Gestock (`producto`, `categoria`, `deposito`, ...) necesitan estos mismos cuatro campos, así que en vez de repetirlos en cada `model.go` conviene definirlos **una sola vez**, en un paquete propio que cualquier dominio pueda importar:
-
-```go
-// internal/auditoria/auditoria.go
-package auditoria
-
-import "time"
-
-type Auditoria struct {
-    CreadoPor     string    `json:"creadoPor" bson:"creado_por"`
-    CreadoEn      time.Time `json:"creadoEn" bson:"creado_en"`
-    ModificadoPor string    `json:"modificadoPor,omitempty" bson:"modificado_por,omitempty"`
-    ActualizadoEn time.Time `json:"actualizadoEn,omitempty" bson:"actualizado_en,omitempty"`
-}
-```
-
-```go
-// internal/producto/model.go
-package producto
-
-import (
-    "go.mongodb.org/mongo-driver/v2/bson"
-
-    "gestock/api/internal/auditoria"
-)
-
-type Producto struct {
-    ID                  bson.ObjectID `bson:"_id,omitempty"`
-    Nombre              string        `bson:"nombre"`
-    Precio              float64       `bson:"precio"`
-    auditoria.Auditoria `bson:"auditoria"`
-}
-```
-
-Un struct embebido (sin nombre de campo, solo el tipo importado) "presta" sus campos al struct que lo contiene: `p.CreadoPor` es válido aunque `CreadoPor` esté declarado en el paquete `auditoria`, no en `producto`. Completar `Auditoria` es responsabilidad del `service` (que conoce quién es el usuario autenticado, dato que llega recién en la Clase 6), no del `handler` ni del `repository`. `internal/auditoria/` es, junto con `internal/db/`, la segunda excepción a "todo se organiza por dominio": los conceptos verdaderamente transversales a todos los dominios sí valen un paquete propio.
-
-> Si `ProductoDTO` (Clase 2, `dto.go`) también necesita mostrar quién creó o modificó el producto (por ejemplo, para un reporte de auditoría en el frontend), se embebe `auditoria.Auditoria` ahí también, y se copian esos campos en `ToDTO()`/`ToModel()` igual que `Nombre` y `Precio`.
-
-### Testing básico con `testing` y `go test`
-
-Go trae testing incorporado en la librería estándar, sin frameworks externos ni anotaciones.
-
-| Convención | Regla |
-|------------|-------|
-| Archivo | Termina en `_test.go`, vive en la misma carpeta que el código que testea |
-| Paquete | El mismo paquete del código, o `xxx_test` si se quiere testear solo lo exportado |
-| Función | `func TestXxx(t *testing.T)` — el nombre debe empezar con `Test` seguido de mayúscula |
-| Ejecutar | `go test ./...` corre todos los tests del módulo |
-
-No hay un `assertEquals` incorporado: los tests son código Go común — se compara el valor obtenido contra el esperado con un `if`, y se reporta la falla con `t.Errorf` (registra el error y sigue corriendo el resto del test) o `t.Fatalf` (registra y corta el test ahí mismo).
-
-### Testear el `service` con un repository de prueba
-
-Acá es donde el repository-como-interfaz paga su costo de diseño: para testear `Service.Crear` no hace falta levantar Mongo — alcanza con un tipo cualquiera que satisfaga `Repository`. El test vive en `service_test.go`, dentro del mismo paquete `producto`, así que `Producto`, `Repository` y `Service` ya están disponibles sin importar nada del propio proyecto:
-
-```go
-package producto
-
-import (
-    "context"
-    "errors"
-    "testing"
-)
-
-type fakeRepository struct {
-    productos []Producto
-}
-
-func (f *fakeRepository) FindAll(ctx context.Context) ([]Producto, error) {
-    return f.productos, nil
-}
-func (f *fakeRepository) FindByID(ctx context.Context, id string) (Producto, error) {
-    for _, p := range f.productos {
-        if p.ID.Hex() == id {
-            return p, nil
-        }
-    }
-    return Producto{}, errors.New("no encontrado")
-}
-func (f *fakeRepository) Create(ctx context.Context, p Producto) (Producto, error) {
-    f.productos = append(f.productos, p)
-    return p, nil
-}
-func (f *fakeRepository) Update(ctx context.Context, id string, p Producto) (Producto, error) {
-    return p, nil
-}
-func (f *fakeRepository) Delete(ctx context.Context, id string) error { return nil }
-
-func TestCrear(t *testing.T) {
-    repo := &fakeRepository{}
-    s := NewService(repo)
-
-    creado, err := s.Crear(context.Background(), Producto{Nombre: "Mouse", Precio: 100})
-    if err != nil {
-        t.Fatalf("Crear() devolvió error: %v", err)
-    }
-    if creado.Nombre != "Mouse" {
-        t.Errorf("Nombre = %v; quería Mouse", creado.Nombre)
-    }
-    if len(repo.productos) != 1 {
-        t.Errorf("se esperaba 1 producto guardado, hay %d", len(repo.productos))
-    }
-}
-```
-
-`fakeRepository` nunca declara `implements Repository` — como cualquier tipo en Go, satisface la interfaz con solo tener los métodos correctos. Este mismo patrón es el que se usa para testear reglas de negocio (por ejemplo, "no permitir dos productos con el mismo nombre") sin depender de que Mongo esté levantado.
-
-```bash
-go test ./...              # corre todos los tests del módulo
-go test ./internal/producto # solo los de un paquete/dominio
-go test -v ./...            # verbose: lista cada test y su resultado
-```
-
----
-
-## Clase 5 — MongoDB en profundidad
-
-Desde la Clase 2 tenemos `producto.MongoRepository` funcionando, pero se presentó como una receta a seguir. Esta clase explica qué es realmente MongoDB, cómo se arman filtros y updates, por qué `model.go` y `dto.go` están separados en dos structs distintos, y cómo modelar una segunda colección relacionada en un paquete propio — algo que Gestock necesita porque **cada depósito mantiene su propio stock por producto**.
-
-### ¿Qué es MongoDB?
-
-MongoDB es una base de datos **NoSQL orientada a documentos**. En vez de guardar filas en tablas con un esquema fijo (como hace MySQL con JPA en la Unidad 3), guarda **documentos** en formato similar a JSON dentro de **colecciones**. Un documento no necesita que todas las instancias tengan los mismos campos, ni declarar el esquema por adelantado con un `CREATE TABLE` o un `@Entity`: el esquema lo define, en la práctica, lo que la aplicación decide escribir.
-
-| Relacional (JPA / MySQL — Unidad 3) | Documental (MongoDB) |
-|---|---|
-| Tabla | Colección |
-| Fila (row) | Documento |
-| Columna | Campo (field) |
-| Esquema fijo, declarado con DDL / `@Entity` | Esquema flexible, cada documento puede variar |
-| Clave primaria numérica autoincremental | `_id` (por defecto, un `ObjectID` generado por Mongo) |
-| Relaciones vía `JOIN` (`@ManyToOne`, FK) | **Embedding** (subdocumentos anidados) o referencias manuales entre colecciones |
-| Tipos de columna simples | Tipos BSON ricos: arrays, subdocumentos, fechas, binarios |
-
-> **Concepto clave**: no hay un "JOIN" nativo pensado para el uso general en MongoDB. El modelado documental tiende a **embeber** lo que casi siempre se lee junto (ej: las líneas de una factura, dentro de la factura) en vez de normalizar en tablas separadas.
-
-MongoDB no almacena JSON puro en disco: almacena **BSON** (*Binary JSON*), una representación binaria que agrega tipos que JSON no tiene (fechas, enteros de distinto tamaño, binarios, y el tipo `ObjectID`). El driver de Go convierte automáticamente entre structs de Go y BSON, igual que Jackson convierte entre JSON y objetos Java en Spring Boot.
-
-`_id` es la clave primaria del documento. Si no se especifica al insertar, Mongo genera automáticamente un `ObjectID`: un identificador de 12 bytes (timestamp + identificador de proceso + contador), representado como una cadena hexadecimal de 24 caracteres — el mismo tipo que ya venimos convirtiendo con `bson.ObjectIDFromHex` / `.Hex()` desde la Clase 2.
-
-### CRUD conceptual con `mongosh`
-
-Antes de seguir con Go conviene ver el CRUD "a mano" en la shell de Mongo (`mongosh`) — la misma consola a la que se entra con `docker exec -it <contenedor> mongosh`.
-
-```js
-use gestock
-
-// Create
-db.productos.insertOne({ nombre: "Teclado mecánico", precio: 45000.5 })
-
-// Read
-db.productos.find()                              // todos los documentos
-db.productos.find({ nombre: "Teclado mecánico" }) // filtro por igualdad
-db.productos.findOne({ _id: ObjectId("6620a1f2c1a2b3c4d5e6f7a8") })
-
-// Update
-db.productos.updateOne(
-  { _id: ObjectId("6620a1f2c1a2b3c4d5e6f7a8") },
-  { $set: { precio: 47000 } }
-)
-
-// Delete
-db.productos.deleteOne({ _id: ObjectId("6620a1f2c1a2b3c4d5e6f7a8") })
-```
-
-Cada uno de estos comandos tiene el equivalente directo en Go que ya usamos en `producto.MongoRepository`: `insertOne` → `InsertOne`, `find`/`findOne` → `Find`/`FindOne`, `updateOne` → `UpdateOne`, `deleteOne` → `DeleteOne`.
-
-### Operadores básicos de query
-
-Los filtros y las actualizaciones en Mongo se arman con documentos que usan **operadores**, identificados por empezar con `$`.
-
-| Operador | Uso | Ejemplo |
-|---|---|---|
-| `$set` | Actualiza (o agrega) el valor de un campo, sin tocar el resto del documento | `{ $set: { precio: 47000 } }` |
-| `$gt` / `$gte` | Mayor que / mayor o igual | `{ precio: { $gt: 10000 } }` |
-| `$lt` / `$lte` | Menor que / menor o igual | `{ precio: { $lt: 50000 } }` |
-| `$eq` | Igual a (implícito cuando se escribe `{ campo: valor }`) | `{ nombre: { $eq: "Mouse" } }` |
-| `$in` | El valor está dentro de una lista | `{ nombre: { $in: ["Mouse", "Teclado mecánico"] } }` |
-| `$and` / `$or` | Combina condiciones | `{ $and: [{ precio: { $gt: 1000 } }, { precio: { $lt: 50000 } }] }` |
-
-> **Concepto clave**: en JPA, filtrar y actualizar se hace con JPQL/SQL o con `CriteriaBuilder`. En Mongo, los filtros y los updates **son documentos BSON en sí mismos** — no hay un lenguaje de consulta separado del formato de datos. Es literalmente lo que ya construimos en Go con `bson.M` en `producto.MongoRepository.Update`.
-
-Un ejemplo con `$gt`/`$lt` combinados, útil para el caso de "alertas de stock mínimo" del TP:
-
-```go
-filtro := bson.M{"stock": bson.M{"$lt": stockMinimo}}
-cursor, err := r.coll.Find(ctx, filtro)
-```
-
-### Por qué `model.go` y `dto.go` son dos structs distintos
-
-Una alternativa más corta a lo que armamos en la Clase 2 sería tener **un solo** struct `Producto`, con tags `json`, `bson` y `binding` los tres juntos en los mismos campos, y usarlo en todas las capas. Funciona para un ejemplo chico, pero tiene un problema de fondo: mezcla dos formatos que cambian por razones distintas y en momentos distintos.
-
-```go
-// Lo que NO hacemos — un solo struct para todo:
-type Producto struct {
-    ID     bson.ObjectID `json:"id,omitempty" bson:"_id,omitempty"` // ¿json o bson? ¿string o ObjectID?
-    Nombre string        `json:"nombre" bson:"nombre" binding:"required"`
-    Precio float64       `json:"precio" bson:"precio" binding:"required,gt=0"`
-}
-```
-
-El problema más concreto: `ID` no puede ser `json:"id"` y `bson:"_id"` **a la vez** con el mismo tipo — el driver de Mongo necesita `bson.ObjectID`, y ese tipo no es algo que un cliente HTTP pueda mandar en un JSON (`{"id": "6620a1f2..."}` es un string). Por eso separamos:
-
-| Struct | Tags | Vive en | Lo usan |
-|---|---|---|---|
-| `Producto` | `bson:"..."` | `model.go` | `repository.go`, `service.go` |
-| `ProductoDTO` | `json:"..."`, `binding:"..."` | `dto.go` | `handler.go` |
-
-La responsabilidad de traducir entre ambos mundos (`ID string` ↔ `ID bson.ObjectID`, entre otras cosas) es la de `ToDTO()`/`ToModel()` en `dto.go`, y solo el `handler` la usa — `service` y `repository` trabajan siempre con `Producto`, sin enterarse nunca de que existe un JSON del otro lado.
-
-`mongo.ErrNoDocuments` es el error que devuelve `Decode` cuando el filtro no matcheó ningún documento — la forma en la que el driver representa "no encontrado". `UpdateResult.MatchedCount` y `DeleteResult.DeletedCount` en `0` cumplen el mismo rol para `Update` y `Delete`: no hace falta un `Find` previo para saber si el documento existía.
-
-### Una segunda colección relacionada: `deposito` y `stock`
-
-Gestock no tiene un stock global por producto — **cada depósito mantiene su propio stock**, independiente del de otros depósitos. Siguiendo la misma idea de paquetes por dominio de la Clase 2, `Deposito` es un paquete nuevo, y el stock —que relaciona `producto` con `deposito`— es un tercer paquete propio, porque no "pertenece" del todo a ninguno de los otros dos:
-
-Siguiendo el mismo patrón `model.go`/`dto.go` de `producto`, el modelo de `Deposito` queda con tags `bson` (su `DepositoDTO`, en `dto.go`, es análogo al `ProductoDTO` de la Clase 2 y se omite acá por brevedad):
-
-```go
-// internal/deposito/model.go
-package deposito
-
-import "go.mongodb.org/mongo-driver/v2/bson"
-
-type Deposito struct {
-    ID        bson.ObjectID `bson:"_id,omitempty"`
-    Nombre    string        `bson:"nombre"`
-    Provincia string        `bson:"provincia"`
-}
-```
-
-Sin un `JOIN` nativo, el patrón más simple es guardar el `ID` del producto y del depósito como referencia dentro del documento de stock, en vez de embeberlos:
-
-```go
-// internal/stock/model.go
-package stock
-
-import "go.mongodb.org/mongo-driver/v2/bson"
-
-// StockProducto vive en su propia colección, y referencia
-// tanto al producto como al depósito por su ID (no los importa
-// como tipos — evita que "stock" dependa de "producto"/"deposito").
-type StockProducto struct {
-    ID         bson.ObjectID `bson:"_id,omitempty"`
-    ProductoID bson.ObjectID `bson:"producto_id"`
-    DepositoID bson.ObjectID `bson:"deposito_id"`
-    Cantidad   int           `bson:"cantidad"`
-}
-```
-
-```go
-// internal/stock/repository.go
-package stock
-
-func (r *MongoRepository) FindByDeposito(ctx context.Context, depositoID string) ([]StockProducto, error) {
-    oid, err := bson.ObjectIDFromHex(depositoID)
-    if err != nil {
-        return nil, err
-    }
-
-    cursor, err := r.coll.Find(ctx, bson.M{"deposito_id": oid})
-    if err != nil {
-        return nil, err
-    }
-    defer cursor.Close(ctx)
-
-    var stockItems []StockProducto
-    if err := cursor.All(ctx, &stockItems); err != nil {
-        return nil, err
-    }
-    return stockItems, nil
-}
-```
-
-Para mostrar, por ejemplo, el nombre del producto junto a su cantidad en un depósito, el `service` del paquete `stock` necesita hablar con el `service` (o el `repository`) del paquete `producto` — hace **dos consultas**, una a cada colección, y las combina en memoria en Go. Es más código que un `JOIN` de SQL, pero es el patrón estándar en Mongo cuando dos colecciones cambian con independencia una de otra (acá, un producto puede existir sin stock en ningún depósito todavía). Es también la primera vez que un paquete de dominio (`stock`) importa a otro (`producto`) — algo perfectamente válido; lo que `internal/` impide es que alguien **fuera** del módulo los importe, no que se importen entre sí.
-
----
-
-## Clase 6 — JWT, bcrypt, middlewares y autorización por rol
+## Clase 3 — JWT, bcrypt, middlewares y autorización por rol
 
 Hasta acá la API está completa pero **abierta**: cualquiera puede hacer `POST`, `PUT` o `DELETE` sin identificarse. Esta clase cierra ese agujero en dos niveles, porque Gestock los necesita a los dos: **autenticación** (¿quién sos?) con JWT, y **autorización** (¿tenés permiso para esto?) por rol — casi ningún endpoint del TP es "autenticado sí/no", son "autenticado + rol correcto + depósito asignado".
 
@@ -1970,6 +1468,508 @@ sequenceDiagram
 
 ---
 
+## Clase 4 — MongoDB en profundidad
+
+Desde la Clase 2 tenemos `producto.MongoRepository` funcionando, pero se presentó como una receta a seguir. Esta clase explica qué es realmente MongoDB, cómo se arman filtros y updates, por qué `model.go` y `dto.go` están separados en dos structs distintos, y cómo modelar una segunda colección relacionada en un paquete propio — algo que Gestock necesita porque **cada depósito mantiene su propio stock por producto**.
+
+### ¿Qué es MongoDB?
+
+MongoDB es una base de datos **NoSQL orientada a documentos**. En vez de guardar filas en tablas con un esquema fijo (como hace MySQL con JPA en la Unidad 3), guarda **documentos** en formato similar a JSON dentro de **colecciones**. Un documento no necesita que todas las instancias tengan los mismos campos, ni declarar el esquema por adelantado con un `CREATE TABLE` o un `@Entity`: el esquema lo define, en la práctica, lo que la aplicación decide escribir.
+
+| Relacional (JPA / MySQL — Unidad 3) | Documental (MongoDB) |
+|---|---|
+| Tabla | Colección |
+| Fila (row) | Documento |
+| Columna | Campo (field) |
+| Esquema fijo, declarado con DDL / `@Entity` | Esquema flexible, cada documento puede variar |
+| Clave primaria numérica autoincremental | `_id` (por defecto, un `ObjectID` generado por Mongo) |
+| Relaciones vía `JOIN` (`@ManyToOne`, FK) | **Embedding** (subdocumentos anidados) o referencias manuales entre colecciones |
+| Tipos de columna simples | Tipos BSON ricos: arrays, subdocumentos, fechas, binarios |
+
+> **Concepto clave**: no hay un "JOIN" nativo pensado para el uso general en MongoDB. El modelado documental tiende a **embeber** lo que casi siempre se lee junto (ej: las líneas de una factura, dentro de la factura) en vez de normalizar en tablas separadas.
+
+MongoDB no almacena JSON puro en disco: almacena **BSON** (*Binary JSON*), una representación binaria que agrega tipos que JSON no tiene (fechas, enteros de distinto tamaño, binarios, y el tipo `ObjectID`). El driver de Go convierte automáticamente entre structs de Go y BSON, igual que Jackson convierte entre JSON y objetos Java en Spring Boot.
+
+`_id` es la clave primaria del documento. Si no se especifica al insertar, Mongo genera automáticamente un `ObjectID`: un identificador de 12 bytes (timestamp + identificador de proceso + contador), representado como una cadena hexadecimal de 24 caracteres — el mismo tipo que ya venimos convirtiendo con `bson.ObjectIDFromHex` / `.Hex()` desde la Clase 2.
+
+### CRUD conceptual con `mongosh`
+
+Antes de seguir con Go conviene ver el CRUD "a mano" en la shell de Mongo (`mongosh`) — la misma consola a la que se entra con `docker exec -it <contenedor> mongosh`.
+
+```js
+use gestock
+
+// Create
+db.productos.insertOne({ nombre: "Teclado mecánico", precio: 45000.5 })
+
+// Read
+db.productos.find()                              // todos los documentos
+db.productos.find({ nombre: "Teclado mecánico" }) // filtro por igualdad
+db.productos.findOne({ _id: ObjectId("6620a1f2c1a2b3c4d5e6f7a8") })
+
+// Update
+db.productos.updateOne(
+  { _id: ObjectId("6620a1f2c1a2b3c4d5e6f7a8") },
+  { $set: { precio: 47000 } }
+)
+
+// Delete
+db.productos.deleteOne({ _id: ObjectId("6620a1f2c1a2b3c4d5e6f7a8") })
+```
+
+Cada uno de estos comandos tiene el equivalente directo en Go que ya usamos en `producto.MongoRepository`: `insertOne` → `InsertOne`, `find`/`findOne` → `Find`/`FindOne`, `updateOne` → `UpdateOne`, `deleteOne` → `DeleteOne`.
+
+### Operadores básicos de query
+
+Los filtros y las actualizaciones en Mongo se arman con documentos que usan **operadores**, identificados por empezar con `$`.
+
+| Operador | Uso | Ejemplo |
+|---|---|---|
+| `$set` | Actualiza (o agrega) el valor de un campo, sin tocar el resto del documento | `{ $set: { precio: 47000 } }` |
+| `$gt` / `$gte` | Mayor que / mayor o igual | `{ precio: { $gt: 10000 } }` |
+| `$lt` / `$lte` | Menor que / menor o igual | `{ precio: { $lt: 50000 } }` |
+| `$eq` | Igual a (implícito cuando se escribe `{ campo: valor }`) | `{ nombre: { $eq: "Mouse" } }` |
+| `$in` | El valor está dentro de una lista | `{ nombre: { $in: ["Mouse", "Teclado mecánico"] } }` |
+| `$and` / `$or` | Combina condiciones | `{ $and: [{ precio: { $gt: 1000 } }, { precio: { $lt: 50000 } }] }` |
+
+> **Concepto clave**: en JPA, filtrar y actualizar se hace con JPQL/SQL o con `CriteriaBuilder`. En Mongo, los filtros y los updates **son documentos BSON en sí mismos** — no hay un lenguaje de consulta separado del formato de datos. Es literalmente lo que ya construimos en Go con `bson.M` en `producto.MongoRepository.Update`.
+
+Un ejemplo con `$gt`/`$lt` combinados, útil para el caso de "alertas de stock mínimo" del TP:
+
+```go
+filtro := bson.M{"stock": bson.M{"$lt": stockMinimo}}
+cursor, err := r.coll.Find(ctx, filtro)
+```
+
+### Por qué `model.go` y `dto.go` son dos structs distintos
+
+Una alternativa más corta a lo que armamos en la Clase 2 sería tener **un solo** struct `Producto`, con tags `json`, `bson` y `binding` los tres juntos en los mismos campos, y usarlo en todas las capas. Funciona para un ejemplo chico, pero tiene un problema de fondo: mezcla dos formatos que cambian por razones distintas y en momentos distintos.
+
+```go
+// Lo que NO hacemos — un solo struct para todo:
+type Producto struct {
+    ID     bson.ObjectID `json:"id,omitempty" bson:"_id,omitempty"` // ¿json o bson? ¿string o ObjectID?
+    Nombre string        `json:"nombre" bson:"nombre" binding:"required"`
+    Precio float64       `json:"precio" bson:"precio" binding:"required,gt=0"`
+}
+```
+
+El problema más concreto: `ID` no puede ser `json:"id"` y `bson:"_id"` **a la vez** con el mismo tipo — el driver de Mongo necesita `bson.ObjectID`, y ese tipo no es algo que un cliente HTTP pueda mandar en un JSON (`{"id": "6620a1f2..."}` es un string). Por eso separamos:
+
+| Struct | Tags | Vive en | Lo usan |
+|---|---|---|---|
+| `Producto` | `bson:"..."` | `model.go` | `repository.go`, `service.go` |
+| `ProductoDTO` | `json:"..."`, `binding:"..."` | `dto.go` | `handler.go` |
+
+La responsabilidad de traducir entre ambos mundos (`ID string` ↔ `ID bson.ObjectID`, entre otras cosas) es la de `ToDTO()`/`ToModel()` en `dto.go`, y solo el `handler` la usa — `service` y `repository` trabajan siempre con `Producto`, sin enterarse nunca de que existe un JSON del otro lado.
+
+`mongo.ErrNoDocuments` es el error que devuelve `Decode` cuando el filtro no matcheó ningún documento — la forma en la que el driver representa "no encontrado". `UpdateResult.MatchedCount` y `DeleteResult.DeletedCount` en `0` cumplen el mismo rol para `Update` y `Delete`: no hace falta un `Find` previo para saber si el documento existía.
+
+### Una segunda colección relacionada: `deposito` y `stock`
+
+Gestock no tiene un stock global por producto — **cada depósito mantiene su propio stock**, independiente del de otros depósitos. Siguiendo la misma idea de paquetes por dominio de la Clase 2, `Deposito` es un paquete nuevo, y el stock —que relaciona `producto` con `deposito`— es un tercer paquete propio, porque no "pertenece" del todo a ninguno de los otros dos:
+
+Siguiendo el mismo patrón `model.go`/`dto.go` de `producto`, el modelo de `Deposito` queda con tags `bson` (su `DepositoDTO`, en `dto.go`, es análogo al `ProductoDTO` de la Clase 2 y se omite acá por brevedad):
+
+```go
+// internal/deposito/model.go
+package deposito
+
+import "go.mongodb.org/mongo-driver/v2/bson"
+
+type Deposito struct {
+    ID        bson.ObjectID `bson:"_id,omitempty"`
+    Nombre    string        `bson:"nombre"`
+    Provincia string        `bson:"provincia"`
+}
+```
+
+Sin un `JOIN` nativo, el patrón más simple es guardar el `ID` del producto y del depósito como referencia dentro del documento de stock, en vez de embeberlos:
+
+```go
+// internal/stock/model.go
+package stock
+
+import "go.mongodb.org/mongo-driver/v2/bson"
+
+// StockProducto vive en su propia colección, y referencia
+// tanto al producto como al depósito por su ID (no los importa
+// como tipos — evita que "stock" dependa de "producto"/"deposito").
+type StockProducto struct {
+    ID         bson.ObjectID `bson:"_id,omitempty"`
+    ProductoID bson.ObjectID `bson:"producto_id"`
+    DepositoID bson.ObjectID `bson:"deposito_id"`
+    Cantidad   int           `bson:"cantidad"`
+}
+```
+
+```go
+// internal/stock/repository.go
+package stock
+
+func (r *MongoRepository) FindByDeposito(ctx context.Context, depositoID string) ([]StockProducto, error) {
+    oid, err := bson.ObjectIDFromHex(depositoID)
+    if err != nil {
+        return nil, err
+    }
+
+    cursor, err := r.coll.Find(ctx, bson.M{"deposito_id": oid})
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var stockItems []StockProducto
+    if err := cursor.All(ctx, &stockItems); err != nil {
+        return nil, err
+    }
+    return stockItems, nil
+}
+```
+
+Para mostrar, por ejemplo, el nombre del producto junto a su cantidad en un depósito, el `service` del paquete `stock` necesita hablar con el `service` (o el `repository`) del paquete `producto` — hace **dos consultas**, una a cada colección, y las combina en memoria en Go. Es más código que un `JOIN` de SQL, pero es el patrón estándar en Mongo cuando dos colecciones cambian con independencia una de otra (acá, un producto puede existir sin stock en ningún depósito todavía). Es también la primera vez que un paquete de dominio (`stock`) importa a otro (`producto`) — algo perfectamente válido; lo que `internal/` impide es que alguien **fuera** del módulo los importe, no que se importen entre sí.
+
+---
+
+## Clase 5 — Gin en profundidad
+
+La Clase 2 armó un handler funcional usando `c.Param`, `c.JSON` y `c.ShouldBindJSON` sin detenerse a explicar cada uno. Esta clase vuelve sobre esas piezas y agrega lo que quedó afuera: por qué existe Gin, cómo se extraen parámetros de las dos formas posibles, cómo funcionan los tags de validación en detalle, y qué código de estado corresponde a cada situación.
+
+### Por qué Gin
+
+En Go no hay un framework "oficial" incluido para REST como Spring Boot en Java. La librería estándar (`net/http`) da lo mínimo indispensable:
+
+```go
+func productosHandler(w http.ResponseWriter, r *http.Request) {
+	productos := []ProductoDTO{{ID: "1", Nombre: "Laptop", Precio: 1500.0}}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(productos)
+}
+
+func main() {
+	http.HandleFunc("/productos", productosHandler)
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+Esto funciona, pero rápidamente se vuelve tedioso a mano:
+
+- No hay forma nativa de capturar `/productos/{id}` como parámetro — hay que parsear el path a mano.
+- No hay distinción de métodos: `productosHandler` responde igual a un GET que a un POST a menos que se chequee `r.Method` manualmente.
+- Leer y validar el body JSON y devolver errores 400 bien formados requiere repetir el mismo boilerplate en cada handler.
+- Setear el código de estado exige llamar `w.WriteHeader(...)` explícitamente antes de escribir el body.
+
+[Gin](https://github.com/gin-gonic/gin) —el framework HTTP más usado en el ecosistema Go, liviano y con un router tipo *radix tree*— automatiza exactamente ese trabajo repetitivo:
+
+| | `net/http` puro | Gin |
+|---|---|---|
+| Rutear por método + path | Manual (`if r.Method == "GET"`, parseo de path) | `router.GET(path, handler)`, `router.POST(...)`, etc. |
+| Parámetros de ruta | Manual | `c.Param("id")` |
+| Serializar JSON | `json.NewEncoder(w).Encode(...)` + `Content-Type` a mano | `c.JSON(status, data)` |
+| Parsear body JSON + validar | `json.NewDecoder(r.Body).Decode(...)` + validación manual | `c.ShouldBindJSON(&struct)` con tags `binding:"..."` |
+| Middlewares (logging, recovery) | No incluidos | `gin.Default()` ya trae logger + recovery de panics |
+| Agrupar rutas | No incluido | `router.Group("/api")` (usado desde la Clase 2) |
+
+`gin.Default()` (el que venimos usando) arma un router con logger + recovery de panics ya activados. `gin.New()` da un router vacío, sin esos middlewares, para quien los quiera configurar manualmente.
+
+### Parámetros de path vs. query string
+
+Gin distingue dos formas de recibir datos en un GET: parte del **path** (`c.Param`, ya usado en `GetByID`) o parte del **query string** (`c.Query`):
+
+```go
+// Parámetro de path: /productos/3
+router.GET("/productos/:id", func(c *gin.Context) {
+	id := c.Param("id") // "3"
+	c.JSON(http.StatusOK, gin.H{"id": id})
+})
+
+// Parámetro de query: /productos?nombre=Laptop
+router.GET("/productos", func(c *gin.Context) {
+	nombre := c.Query("nombre")               // "" si no viene
+	nombre = c.DefaultQuery("nombre", "todos") // con valor por defecto
+	c.JSON(http.StatusOK, gin.H{"filtro": nombre})
+})
+```
+
+| Método | Extrae | Ejemplo de URL |
+|--------|--------|-----------------|
+| `c.Param("id")` | Segmento de la ruta declarado como `:id` | `/productos/3` → `"3"` |
+| `c.Query("nombre")` | Query string | `/productos?nombre=Laptop` → `"Laptop"` |
+| `c.DefaultQuery("nombre", "x")` | Query string, con valor por defecto si falta | `/productos` → `"x"` |
+
+`gin.H` es simplemente un alias de Gin para `map[string]interface{}` — una forma rápida de armar un JSON ad hoc sin declarar un struct.
+
+### Tags `json:"..."` para (de)serialización
+
+Cuando un struct de Go se convierte a JSON (o viceversa), por defecto Go usa el **nombre del campo tal cual** (en mayúscula, porque tiene que estar exportado). Los tags `json:"..."` controlan ese mapeo — es exactamente lo que ya usamos en `ProductoDTO` (Clase 2, `dto.go`):
+
+```go
+type ProductoDTO struct {
+	ID     string  `json:"id,omitempty"`
+	Nombre string  `json:"nombre"`
+	Precio float64 `json:"precio"`
+}
+```
+
+| Tag | Efecto |
+|-----|--------|
+| `json:"nombre"` | El campo `Nombre` se serializa/deserializa como `"nombre"` en el JSON (minúscula) |
+| `json:"id,omitempty"` | Si el campo tiene el valor cero (`""`, `0`, `nil`...), se omite del JSON de salida |
+| `json:"-"` | El campo nunca se serializa ni deserializa |
+
+Sin el tag, `ProductoDTO{Nombre: "Mouse"}` se serializaría como `{"ID":"","Nombre":"Mouse","Precio":0}` — con mayúsculas, que no es la convención habitual de una API JSON.
+
+> Notá que `Producto` (el modelo, `model.go`) usa tags `bson:"..."`, no `json:"..."` — porque `Producto` nunca se serializa directamente a JSON, solo `ProductoDTO` lo hace. Esa es, en una frase, la razón de ser de la separación model/DTO.
+
+### Binding y validación con `c.ShouldBindJSON`
+
+`c.ShouldBindJSON` lee el body JSON del request, lo vuelca en un struct de Go, y **valida al mismo tiempo** según los tags `binding:"..."`:
+
+```go
+router.POST("/productos", func(c *gin.Context) {
+	var dto ProductoDTO
+
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto)
+})
+```
+
+| Tag `binding` | Qué valida |
+|---------------|-----------|
+| `required` | El campo no puede estar ausente ni tener el valor cero de su tipo (`""`, `0`) |
+| `gt=0` | El valor numérico debe ser mayor a 0 (*greater than*) |
+| `gte=0` / `lte=100` | Mayor o igual / menor o igual a un valor |
+| `email` | Formato de email válido |
+| `min=3` / `max=50` | Longitud mínima/máxima (strings) o valor mínimo/máximo (números) |
+
+Gin usa por debajo la librería [`go-playground/validator`](https://github.com/go-playground/validator), la misma familia de validaciones que Bean Validation en Java (`@NotBlank`, `@Positive`) pero expresada como tags de struct en vez de anotaciones separadas.
+
+> **Concepto clave**: si el JSON del body no puede parsearse (JSON inválido) o no cumple las reglas de `binding`, `ShouldBindJSON` devuelve un `error` no nulo y **no** modifica el struct de forma parcial de manera confiable — siempre hay que chequear el error antes de seguir.
+
+### Manejo de errores y códigos HTTP
+
+Gin no lanza excepciones para errores de negocio — sigue el mismo estilo de Go de **devolver errores como valores** (visto en la Clase 1). El handler decide explícitamente qué código HTTP corresponde a cada situación, usando `c.JSON(status, body)`:
+
+| Constante de `net/http` | Código | Uso típico |
+|--------------------------|--------|------------|
+| `http.StatusOK` | 200 | GET / PUT exitoso |
+| `http.StatusCreated` | 201 | POST exitoso |
+| `http.StatusNoContent` | 204 | DELETE exitoso |
+| `http.StatusBadRequest` | 400 | Datos inválidos (falla de `binding`, parámetro faltante) |
+| `http.StatusUnauthorized` | 401 | Falta autenticación o es inválida (Clase 3) |
+| `http.StatusForbidden` | 403 | Autenticado, pero sin permiso para esa acción (Clase 3) |
+| `http.StatusNotFound` | 404 | Recurso inexistente |
+| `http.StatusInternalServerError` | 500 | Error inesperado del servidor |
+
+Usar las constantes de `net/http` (`http.StatusOK`) en vez del número mágico (`200`) es la convención estándar en Go — Gin las reexpone igual pero conviene importar `net/http` para tenerlas disponibles.
+
+### `router.Group()` — organizar rutas por dominio
+
+Ya lo usamos en la Clase 2 para `/productos`; vale la pena mirarlo con más detalle porque Gestock tiene muchos dominios (`productos`, `depositos`, `usuarios`, `ordenes-compra`, ...):
+
+```go
+func RegisterRoutes(router *gin.Engine, h *Handler) {
+	productos := router.Group("/productos")
+	{
+		productos.GET("", h.List)
+		productos.GET("/:id", h.GetByID)
+		productos.POST("", h.Create)
+	}
+}
+```
+
+`router.Group("/productos")` devuelve un `*gin.RouterGroup` con el mismo set de métodos (`GET`, `POST`, etc.) que el router — cada ruta registrada ahí queda automáticamente prefijada con `/productos`. Las llaves `{ }` no tienen ningún efecto sintáctico en Go; es una convención visual de la comunidad para marcar "esto pertenece al grupo". Con una API de un solo dominio no se nota la ganancia, pero en Gestock, con `Producto`, `Deposito`, `Usuario`, etc., cada dominio registra su propio grupo (y probablemente su propio archivo `*_routes.go`) y `main.go` solo los combina.
+
+### `context.Context` en un handler de Gin
+
+`gin.Context` (con minúscula el paquete, mayúscula el tipo) es la estructura propia de Gin que agrupa el request, la response y helpers como `c.JSON` o `c.Param`. Es **distinto** del `context.Context` de la librería estándar, pero está conectado a él: todo `*gin.Context` expone el contexto del request subyacente vía `c.Request.Context()` — el mismo que ya venimos pasando al `service` y al `repository` desde la Clase 2.
+
+```go
+func handler(c *gin.Context) {
+	ctx := c.Request.Context()
+	resultado, err := operacionLenta(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resultado)
+}
+```
+
+`context.Context` sirve para propagar **cancelación** y **timeouts** a través de una cadena de llamadas: si el cliente cierra la conexión o se agota un plazo, cualquier función que reciba ese `ctx` puede enterarse y abortar el trabajo en curso. Su importancia real se ve en la Clase 4: cada llamada al driver de MongoDB (`collection.Find(ctx, ...)`, `collection.InsertOne(ctx, ...)`) recibe este mismo contexto — si el request HTTP se cancela, la operación contra la base de datos se cancela con él.
+
+---
+
+## Clase 6 — Arquitectura, inyección de dependencias y testing
+
+Desde la Clase 2 venimos trabajando con handler, service, repository y model separados en archivos dentro del paquete `producto`, pero sin detenernos en el **por qué**. Esta clase revisa esa decisión de diseño, profundiza cómo se arma el grafo de dependencias a mano, y cierra con testing — algo que rinde mucho más ahora que ya existe una interfaz de repository para reemplazar por una versión de prueba.
+
+### Por qué separar responsabilidades, aunque compartan paquete
+
+Mezclar el parseo HTTP con la lógica de negocio funciona para un ejemplo chico, pero no escala: a medida que crece la lógica, el código se vuelve difícil de testear y mantener. Es el mismo problema que motivó la **arquitectura en capas** de Spring Boot en la Unidad 3 — con una diferencia: ahí Spring la impone (anotaciones, contenedor de IoC); en Go es una **convención que aplica el desarrollador**, no un mecanismo del lenguaje ni de Gin. Y como en la Clase 2 elegimos organizar por dominio (`internal/producto/`) en vez de por capa técnica, acá la separación ya ni siquiera la sostienen carpetas distintas — la sostiene la disciplina de mantener cada responsabilidad en su archivo.
+
+| Responsabilidad | Archivo (paquete `producto`) | Equivalente en Spring Boot (Unidad 3) |
+|------|------------------|----------------------------------------|
+| **handler** | `handler.go` — recibe la request HTTP, la parsea (`ShouldBindJSON`), llama al service, arma la response y el código de estado | `@RestController` |
+| **service** | `service.go` — lógica de negocio: reglas que no son ni HTTP ni persistencia | `@Service` |
+| **repository** | `repository.go` — acceso a datos, definido como interfaz + implementación concreta | `@Repository` / `JpaRepository` |
+| **model** | `model.go` — el struct que se persiste en Mongo (`Producto`, con tags `bson`) | `@Entity` |
+| **dto** | `dto.go` — el struct que viaja por HTTP (`ProductoDTO`, con tags `json`/`binding`) y su conversión hacia/desde `Producto` | Clases DTO / records |
+
+> **Concepto clave**: el handler no debería saber cómo se guardan los datos, y el repository no debería saber que existe HTTP. Si un repository necesitara devolver un `http.StatusNotFound`, algo está mal ubicado — y como vimos en la Clase 2, acá nada te lo impide a nivel de compilador (`repository.go` podría importar Gin sin que nada se queje), así que esta regla depende de disciplina, no de la estructura de carpetas.
+
+`internal/` no es solo una convención de nombres: como se vio en la Clase 2, el **toolchain de Go la hace cumplir** a nivel de módulo (nadie fuera del proyecto puede importar `internal/producto`). Es la forma que tiene Go de decir "esto es un detalle de implementación", algo que Java (donde todo vive bajo `src/main/java/...` sin esa barrera) solo logra a medias con `package-private`. Lo que `internal/` no separa es una entidad de otra dentro del mismo módulo — eso es lo que logra tener `producto/` y `categoria/` como paquetes Go distintos.
+
+### El repository como interfaz — por qué, no solo cómo
+
+La razón de declarar el repository como interfaz no es estética: es la misma idea de la Unidad 3 (`ProductoRepository extends JpaRepository`, donde el código del `Service` nunca sabe si por debajo hay MySQL, H2 o Postgres) llevada a Go, pero sin un framework que la genere — la escribimos a mano, apoyándonos en la satisfacción implícita de interfaces vista en la Clase 1.
+
+```mermaid
+flowchart LR
+    Client["Cliente\n(curl / Postman)"] -->|"HTTP"| Handler["producto.Handler\n(capa HTTP — Gin)"]
+    Handler --> Service["producto.Service\n(lógica de negocio)"]
+    Service -->|"depende de"| Iface["producto.Repository\n(interfaz)"]
+    Iface -.->|"implementa"| Mongo["producto.MongoRepository"]
+    Iface -.->|"implementa, solo para tests"| Fake["fakeRepository"]
+```
+
+La flecha sólida de `Service` a `Repository` es una dependencia de **interfaz**, en tiempo de compilación — aunque las cuatro cajas del diagrama vivan en el mismo paquete Go. Que hoy exista una sola implementación real (`MongoRepository`) no le quita valor al desacople: como se ve más abajo, esa misma interfaz es lo que permite testear el `service` sin tocar una base de datos real.
+
+### Inyección de dependencias manual
+
+En Spring Boot, el contenedor de IoC escanea clases anotadas (`@Service`, `@Repository`), las instancia y resuelve automáticamente qué pasarle a cada constructor (`@Autowired`). Go no tiene ese contenedor: **no hay reflexión mágica armando el grafo de objetos**. La inyección de dependencias sigue siendo el mismo patrón — una clase recibe sus dependencias desde afuera en vez de crearlas ella misma — pero el cableado se escribe a mano, explícitamente, en un solo lugar: `main.go` (tal como lo armamos en la Clase 2).
+
+| | Spring Boot (`@Autowired` / constructor injection) | Go (manual) |
+|---|---|---|
+| Quién arma los objetos | El contenedor de IoC, en tiempo de arranque, vía reflexión | El desarrollador, explícitamente, en `main.go` |
+| Cómo se marca una dependencia | Anotaciones (`@Service`, `@Repository`, `@Autowired`) | No hay anotaciones; se pasa por parámetro de constructor |
+| Elegir qué implementación inyectar | `@Primary` / `@Qualifier` si hay más de una | Se elige a mano qué función `New...()` se llama en `main.go` |
+| Cambiar de implementación | Cambiar la anotación o el bean configurado | Cambiar una línea en `main.go` |
+| Visibilidad del grafo de dependencias | Implícita, hay que conocer el framework para rastrearla | Explícita: todo el grafo se lee de arriba a abajo en `main.go` |
+
+> **Concepto clave**: esto **es** inyección de dependencias — el patrón no depende de un framework. Spring la automatiza con un contenedor; en Go se hace a mano, con constructores comunes y corrientes. La ventaja de la versión manual es que el grafo de objetos es explícito y se puede leer sin conocer ninguna "magia" del framework; la desventaja es que hay que escribirlo, y crece con el proyecto.
+
+### Auditoría: campos comunes a todo documento
+
+El TP exige que todo documento almacenado registre quién lo creó, quién lo modificó por última vez, y cuándo. Todos los dominios de Gestock (`producto`, `categoria`, `deposito`, ...) necesitan estos mismos cuatro campos, así que en vez de repetirlos en cada `model.go` conviene definirlos **una sola vez**, en un paquete propio que cualquier dominio pueda importar:
+
+```go
+// internal/auditoria/auditoria.go
+package auditoria
+
+import "time"
+
+type Auditoria struct {
+    CreadoPor     string    `json:"creadoPor" bson:"creado_por"`
+    CreadoEn      time.Time `json:"creadoEn" bson:"creado_en"`
+    ModificadoPor string    `json:"modificadoPor,omitempty" bson:"modificado_por,omitempty"`
+    ActualizadoEn time.Time `json:"actualizadoEn,omitempty" bson:"actualizado_en,omitempty"`
+}
+```
+
+```go
+// internal/producto/model.go
+package producto
+
+import (
+    "go.mongodb.org/mongo-driver/v2/bson"
+
+    "gestock/api/internal/auditoria"
+)
+
+type Producto struct {
+    ID                  bson.ObjectID `bson:"_id,omitempty"`
+    Nombre              string        `bson:"nombre"`
+    Precio              float64       `bson:"precio"`
+    auditoria.Auditoria `bson:"auditoria"`
+}
+```
+
+Un struct embebido (sin nombre de campo, solo el tipo importado) "presta" sus campos al struct que lo contiene: `p.CreadoPor` es válido aunque `CreadoPor` esté declarado en el paquete `auditoria`, no en `producto`. Completar `Auditoria` es responsabilidad del `service` (que conoce quién es el usuario autenticado, dato que llega recién en la Clase 3), no del `handler` ni del `repository`. `internal/auditoria/` es, junto con `internal/db/`, la segunda excepción a "todo se organiza por dominio": los conceptos verdaderamente transversales a todos los dominios sí valen un paquete propio.
+
+> Si `ProductoDTO` (Clase 2, `dto.go`) también necesita mostrar quién creó o modificó el producto (por ejemplo, para un reporte de auditoría en el frontend), se embebe `auditoria.Auditoria` ahí también, y se copian esos campos en `ToDTO()`/`ToModel()` igual que `Nombre` y `Precio`.
+
+### Testing básico con `testing` y `go test`
+
+Go trae testing incorporado en la librería estándar, sin frameworks externos ni anotaciones.
+
+| Convención | Regla |
+|------------|-------|
+| Archivo | Termina en `_test.go`, vive en la misma carpeta que el código que testea |
+| Paquete | El mismo paquete del código, o `xxx_test` si se quiere testear solo lo exportado |
+| Función | `func TestXxx(t *testing.T)` — el nombre debe empezar con `Test` seguido de mayúscula |
+| Ejecutar | `go test ./...` corre todos los tests del módulo |
+
+No hay un `assertEquals` incorporado: los tests son código Go común — se compara el valor obtenido contra el esperado con un `if`, y se reporta la falla con `t.Errorf` (registra el error y sigue corriendo el resto del test) o `t.Fatalf` (registra y corta el test ahí mismo).
+
+### Testear el `service` con un repository de prueba
+
+Acá es donde el repository-como-interfaz paga su costo de diseño: para testear `Service.Crear` no hace falta levantar Mongo — alcanza con un tipo cualquiera que satisfaga `Repository`. El test vive en `service_test.go`, dentro del mismo paquete `producto`, así que `Producto`, `Repository` y `Service` ya están disponibles sin importar nada del propio proyecto:
+
+```go
+package producto
+
+import (
+    "context"
+    "errors"
+    "testing"
+)
+
+type fakeRepository struct {
+    productos []Producto
+}
+
+func (f *fakeRepository) FindAll(ctx context.Context) ([]Producto, error) {
+    return f.productos, nil
+}
+func (f *fakeRepository) FindByID(ctx context.Context, id string) (Producto, error) {
+    for _, p := range f.productos {
+        if p.ID.Hex() == id {
+            return p, nil
+        }
+    }
+    return Producto{}, errors.New("no encontrado")
+}
+func (f *fakeRepository) Create(ctx context.Context, p Producto) (Producto, error) {
+    f.productos = append(f.productos, p)
+    return p, nil
+}
+func (f *fakeRepository) Update(ctx context.Context, id string, p Producto) (Producto, error) {
+    return p, nil
+}
+func (f *fakeRepository) Delete(ctx context.Context, id string) error { return nil }
+
+func TestCrear(t *testing.T) {
+    repo := &fakeRepository{}
+    s := NewService(repo)
+
+    creado, err := s.Crear(context.Background(), Producto{Nombre: "Mouse", Precio: 100})
+    if err != nil {
+        t.Fatalf("Crear() devolvió error: %v", err)
+    }
+    if creado.Nombre != "Mouse" {
+        t.Errorf("Nombre = %v; quería Mouse", creado.Nombre)
+    }
+    if len(repo.productos) != 1 {
+        t.Errorf("se esperaba 1 producto guardado, hay %d", len(repo.productos))
+    }
+}
+```
+
+`fakeRepository` nunca declara `implements Repository` — como cualquier tipo en Go, satisface la interfaz con solo tener los métodos correctos. Este mismo patrón es el que se usa para testear reglas de negocio (por ejemplo, "no permitir dos productos con el mismo nombre") sin depender de que Mongo esté levantado.
+
+```bash
+go test ./...              # corre todos los tests del módulo
+go test ./internal/producto # solo los de un paquete/dominio
+go test -v ./...            # verbose: lista cada test y su resultado
+```
+
+---
+
 ## Ejercicios prácticos
 
 Un ejercicio corto por clase (15-30 minutos), pensado para resolver justo después de la teoría correspondiente. La Clase 2 arma el esqueleto real del TP; el resto profundiza sobre esa misma base.
@@ -2000,23 +2000,15 @@ Armar el esqueleto completo del TP para la entidad `Producto`: `docker-compose.y
 
 ### Práctica corta — Clase 3
 
-Agregar a la API una segunda entidad simple (por ejemplo `Categoria`, con `Nombre` y `Descripcion`) en su propio paquete `internal/categoria/`, usando `router.Group`, con validación completa vía `binding` y manejo explícito de todos los códigos de estado de la tabla de la clase.
+Agregar `POST /login`, `AuthMiddleware()` y `RequireRole()` a la API, protegiendo `POST /productos` para que solo un rol específico pueda crear productos.
 
 **Checklist:**
-- [ ] `POST /categorias` con datos inválidos devuelve `400` con un mensaje claro
-- [ ] `GET /categorias?nombre=...` filtra usando `c.Query`
-- [ ] Las rutas de `Categoria` están en su propio `router.Group`, separadas de `/productos`
+- [ ] `POST /login` con credenciales correctas devuelve `200` y un JWT con el claim `rol`
+- [ ] `POST /productos` sin token responde `401`
+- [ ] `POST /productos` con token de un rol no autorizado responde `403`
+- [ ] `POST /productos` con token de un rol autorizado responde `201`
 
 ### Práctica corta — Clase 4
-
-Agregar al `Service` del paquete `producto` al menos una regla de negocio real (ej. no permitir dos productos con el mismo nombre) y testearla con un `fakeRepository`, sin levantar Mongo.
-
-**Checklist:**
-- [ ] La regla de negocio vive en `service.go`, no en `handler.go` ni en `repository.go`
-- [ ] Existe un test que prueba la regla usando el repository de prueba
-- [ ] `go test ./...` compila y pasa sin necesidad de Docker levantado
-
-### Práctica corta — Clase 5
 
 Modelar `Deposito` y una colección de stock que referencie `Producto` y `Deposito` por `ID`, con un endpoint que liste el stock de un depósito puntual.
 
@@ -2025,15 +2017,23 @@ Modelar `Deposito` y una colección de stock que referencie `Producto` y `Deposi
 - [ ] Se usa al menos un operador de query (`$gt`, `$in`, etc.) para algún filtro
 - [ ] Un `id` con formato inválido (no hexadecimal de 24 caracteres) devuelve un error controlado, no un panic
 
-### Práctica corta — Clase 6
+### Práctica corta — Clase 5
 
-Agregar `POST /login`, `AuthMiddleware()` y `RequireRole()` a la API, protegiendo `POST /productos` para que solo un rol específico pueda crear productos.
+Agregar a la API una segunda entidad simple (por ejemplo `Categoria`, con `Nombre` y `Descripcion`) en su propio paquete `internal/categoria/`, usando `router.Group`, con validación completa vía `binding` y manejo explícito de todos los códigos de estado de la tabla de la clase.
 
 **Checklist:**
-- [ ] `POST /login` con credenciales correctas devuelve `200` y un JWT con el claim `rol`
-- [ ] `POST /productos` sin token responde `401`
-- [ ] `POST /productos` con token de un rol no autorizado responde `403`
-- [ ] `POST /productos` con token de un rol autorizado responde `201`
+- [ ] `POST /categorias` con datos inválidos devuelve `400` con un mensaje claro
+- [ ] `GET /categorias?nombre=...` filtra usando `c.Query`
+- [ ] Las rutas de `Categoria` están en su propio `router.Group`, separadas de `/productos`
+
+### Práctica corta — Clase 6
+
+Agregar al `Service` del paquete `producto` al menos una regla de negocio real (ej. no permitir dos productos con el mismo nombre) y testearla con un `fakeRepository`, sin levantar Mongo.
+
+**Checklist:**
+- [ ] La regla de negocio vive en `service.go`, no en `handler.go` ni en `repository.go`
+- [ ] Existe un test que prueba la regla usando el repository de prueba
+- [ ] `go test ./...` compila y pasa sin necesidad de Docker levantado
 
 ---
 
@@ -2073,5 +2073,5 @@ Agregar `POST /login`, `AuthMiddleware()` y `RequireRole()` a la API, protegiend
 |---------|------------|----------------|
 | [jwt.io](https://jwt.io/) | **Auth0** | Debugger interactivo de JWT |
 | [RFC 7519 — JSON Web Token](https://www.rfc-editor.org/rfc/rfc7519) | **IETF** | La especificación formal |
-| [golang-jwt/jwt](https://github.com/golang-jwt/jwt) | Comunidad | Librería usada en la Clase 6 |
+| [golang-jwt/jwt](https://github.com/golang-jwt/jwt) | Comunidad | Librería usada en la Clase 3 |
 | [pkg.go.dev — x/crypto/bcrypt](https://pkg.go.dev/golang.org/x/crypto/bcrypt) | **Go team / Google** | Referencia oficial de `bcrypt` |

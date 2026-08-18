@@ -123,11 +123,41 @@ quedó un `go run` anterior colgado), matar el proceso que lo tiene:
 | `POST` | `/libros` | `{"titulo","autor","isbn","anio_edicion","disponible"}` |
 | `PUT` | `/libros/:id` | ídem |
 | `DELETE` | `/libros/:id` | — |
+| `POST` | `/usuarios/registro` | `{"email","password"}` |
+| `POST` | `/usuarios/login` | `{"email","password"}` |
+| `PUT` | `/usuarios/password` (requiere `Authorization: Bearer <token>`) | `{"passwordActual","passwordNueva"}` |
 
 ```bash
 curl -X POST http://localhost:8080/libros \
   -H "Content-Type: application/json" \
   -d '{"titulo":"Cien años de soledad","autor":"Gabriel García Márquez","isbn":"978-0307474728","anio_edicion":1967,"disponible":true}'
+```
+
+### Usuarios (registro, login y cambio de contraseña)
+
+`internal/usuario/` sigue la misma organización por dominio que `internal/libro/`
+(ver Clase 2), y se apoya en dos paquetes transversales nuevos: `internal/auth/`
+(hashing con bcrypt + emisión/validación de JWT) y `internal/middleware/`
+(`AuthMiddleware`, que valida el JWT y deja disponible el ID del usuario
+autenticado en el contexto de la request) — ver Clase 3 del readme de la
+unidad para el detalle teórico de cada pieza.
+
+```bash
+# Registro
+curl -X POST http://localhost:8080/usuarios/registro \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@test.com","password":"clave1234"}'
+
+# Login -> devuelve { "token": "eyJhbG..." }
+curl -X POST http://localhost:8080/usuarios/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@test.com","password":"clave1234"}'
+
+# Cambio de contraseña autenticado (requiere el token del login)
+curl -X PUT http://localhost:8080/usuarios/password \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"passwordActual":"clave1234","passwordNueva":"otraClave5678"}'
 ```
 
 ## Postman

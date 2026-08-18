@@ -1,8 +1,8 @@
-# Ejercicios — Clase 3: Gin en profundidad
+# Ejercicios — Clase 5: Gin en profundidad
 
-Ejercicios de evaluación para la [Clase 3](../README.md#clase-3--gin-en-profundidad). Profundizan lo que la Clase 2 usó sin explicar del todo: parámetros de path y de query, `binding`, códigos de estado por caso, y `context.Context`.
+Ejercicios de evaluación para la [Clase 5](../README.md#clase-5--gin-en-profundidad). Profundizan lo que la Clase 2 usó sin explicar del todo: parámetros de path y de query, `binding`, códigos de estado por caso, y `context.Context`.
 
-Los Ejercicios 1, 3, 4 y 5 son mini-servidores Gin independientes, sobre un slice fijo en memoria — practican Gin de forma aislada, sin depender del proyecto del TP. El Ejercicio 2 sí trabaja sobre el `service`/`handler` de `Producto` ya conectado a Mongo desde la Clase 2, para practicar la distinción entre validación de forma y de negocio en un contexto real. Ningún ejercicio de esta clase filtra ni pagina **en la base** todavía — eso es la Clase 5, que retoma exactamente estos mismos casos y los resuelve "de verdad" contra Mongo.
+Los Ejercicios 1, 3, 4 y 5 son mini-servidores Gin independientes, sobre un slice fijo en memoria — practican Gin de forma aislada, sin depender del proyecto del TP. El Ejercicio 2 sí trabaja sobre el `service`/`handler` de `Producto` ya conectado a Mongo desde la Clase 2, para practicar la distinción entre validación de forma y de negocio en un contexto real. Ningún ejercicio de esta clase filtra ni pagina **en la base** todavía — eso es la Clase 4, que retoma exactamente estos mismos casos y los resuelve "de verdad" contra Mongo.
 
 ---
 
@@ -33,7 +33,7 @@ Sobre el `Producto` real de la Clase 2, ya conectado a `producto.MongoRepository
 **Requerimientos:**
 
 1. `POST /productos` ya valida con los tags conocidos (`Nombre` requerido, `Precio > 0`) vía `binding`.
-2. Agregar, **dentro de `service.go`** (no en `handler.go` — ya existe esa separación desde la Clase 2, aunque compartan paquete), un rechazo con `409 Conflict` si ya existe un producto con el mismo `Nombre` (comparación sin distinguir mayúsculas/minúsculas — normalizar con `strings.EqualFold`; para esto, `Service.Crear` primero necesita traer los productos existentes con `FindAll` y comparar en Go — la forma de hacer esto directamente en la base es la Clase 5).
+2. Agregar, **dentro de `service.go`** (no en `handler.go` — ya existe esa separación desde la Clase 2, aunque compartan paquete), un rechazo con `409 Conflict` si ya existe un producto con el mismo `Nombre` (comparación sin distinguir mayúsculas/minúsculas — normalizar con `strings.EqualFold`; para esto, `Service.Crear` primero necesita traer los productos existentes con `FindAll` y comparar en Go — la forma de hacer esto directamente en la base es la Clase 4).
 3. El `service` debe devolver un error distinguible (no genérico) para que el `handler` pueda mapearlo a `409` específicamente, sin confundirlo con un error interno.
 4. Probar: alta exitosa, alta con datos inválidos (400), alta con nombre duplicado (409).
 
@@ -58,7 +58,7 @@ Sobre un slice fijo de al menos 10 artículos precargados (`Articulo{ID, Nombre 
 4. La respuesta JSON debe incluir, además de los artículos de esa página, metadata: `total` (cantidad total), `pagina` y `tamanio` actuales.
 5. Probar al menos: primera página, última página parcial (menos elementos que `tamanio`), y una página fuera de rango.
 
-**Evalúa:** conversión y validación de query params numéricos, slicing correcto sin salirse de los límites del slice (`index out of range` es un error común acá), diseño de una respuesta JSON con metadata además de los datos. Es intencionalmente "a mano" y sobre un slice fijo, no contra Mongo — la Clase 5 retoma este mismo problema y lo resuelve con `Skip`/`Limit` reales contra la base.
+**Evalúa:** conversión y validación de query params numéricos, slicing correcto sin salirse de los límites del slice (`index out of range` es un error común acá), diseño de una respuesta JSON con metadata además de los datos. Es intencionalmente "a mano" y sobre un slice fijo, no contra Mongo — la Clase 4 retoma este mismo problema y lo resuelve con `Skip`/`Limit` reales contra la base.
 
 **Checklist:**
 - [ ] Ninguna combinación de `pagina`/`tamanio` provoca un `panic` por índice fuera de rango

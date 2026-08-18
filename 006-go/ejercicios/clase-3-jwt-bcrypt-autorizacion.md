@@ -1,6 +1,6 @@
-# Ejercicios — Clase 6: JWT, bcrypt, middlewares y autorización por rol
+# Ejercicios — Clase 3: JWT, bcrypt, middlewares y autorización por rol
 
-Ejercicios de evaluación para la [Clase 6](../README.md#clase-6--jwt-bcrypt-middlewares-y-autorización-por-rol), la última de la Unidad 6. Parten de `POST /login`, `AuthMiddleware()` y `RequireRole(...)` ya armados en la práctica de esa clase.
+Ejercicios de evaluación para la [Clase 3](../README.md#clase-3--jwt-bcrypt-middlewares-y-autorización-por-rol). Parten de `POST /login`, `AuthMiddleware()` y `RequireRole(...)` ya armados en la práctica de esa clase.
 
 ---
 
@@ -46,7 +46,7 @@ No basta con confiar en que `exp` funciona — hay que demostrarlo con un test.
 
 ## Ejercicio 3 — Rate limiting simple por IP
 
-Un middleware con estado compartido entre requests — reutiliza la idea del `sync.Mutex` visto en la Clase 4 para el repository in-memory.
+Un middleware con estado compartido entre requests — reutiliza la idea del `sync.Mutex` visto en la Clase 6 para el repository in-memory.
 
 **Requerimientos:**
 

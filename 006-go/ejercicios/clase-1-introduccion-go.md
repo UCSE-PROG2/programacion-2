@@ -4,7 +4,7 @@ Ejercicios de evaluación para la [Clase 1](../README.md#clase-1--introducción-
 
 Los Ejercicios 1 a 5 son de lenguaje puro (todo en un único `package main`, sin `struct` ni `interface`). Los Ejercicios 6 y 7 suman structs, punteros e interfaces en un paquete propio.
 
-**No usar todavía** el paquete `testing` ni `go test` — eso es contenido de la Clase 4. La verificación de estos dos últimos ejercicios se hace imprimiendo resultados desde `main()`, no con tests automatizados.
+**No usar todavía** el paquete `testing` ni `go test` — eso es contenido de la Clase 6. La verificación de estos dos últimos ejercicios se hace imprimiendo resultados desde `main()`, no con tests automatizados.
 
 ---
 

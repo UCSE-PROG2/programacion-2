@@ -44,11 +44,11 @@ El sistema debe distinguir, como mínimo, los siguientes roles:
 | Rol | Descripción | Permisos principales |
 |---|---|---|
 | **Administrador** | Control total del sistema | Gestiona usuarios y roles, depósitos, proveedores y categorías. Configura el stock mínimo de cada producto. Accede a todos los reportes. |
-| **Gerente de Depósito** | Responsable de uno o más depósitos | Gestiona productos y proveedores. Crea y aprueba órdenes de compra y transferencias entre depósitos. Accede a los reportes de los depósitos a su cargo. |
+| **Gerente de Depósito** | Responsable de un único depósito | Gestiona productos y proveedores. Crea y aprueba órdenes de compra y transferencias entre depósitos. Accede a los reportes del depósito a su cargo. |
 | **Operario de Depósito** | Trabajo diario dentro de un depósito | Registra ingresos y egresos de stock. Solicita transferencias hacia otros depósitos. Consulta el stock del depósito al que está asignado. |
 | **Auditor** | Control interno, solo lectura | Consulta reportes, historial de movimientos y órdenes de compra de todos los depósitos, sin posibilidad de modificar datos. |
 
-Un usuario puede estar asignado a uno o varios depósitos. Un operario o gerente solo debe poder operar sobre los depósitos a los que fue asignado; el administrador y el auditor tienen visibilidad sobre todos los depósitos.
+Un Gerente o un Operario de Depósito está asignado a un único depósito y solo debe poder operar sobre ese depósito; el administrador y el auditor tienen visibilidad sobre todos los depósitos.
 
 ---
 
@@ -64,7 +64,7 @@ Desarrollar una API REST en Go que implemente toda la lógica de negocio de Gest
 - Los usuarios inician sesión con credenciales propias (usuario/email y contraseña).
 - Solo el rol Administrador puede crear, editar, desactivar y asignar roles a otros usuarios.
 - Un usuario desactivado no debe poder autenticarse ni operar en el sistema.
-- Cada usuario tiene un único rol activo y puede estar asociado a uno o más depósitos.
+- Cada usuario tiene un único rol activo. Un Gerente o un Operario de Depósito está asociado a un único depósito.
 
 **Depósitos**
 - ABM de depósitos (nombre, ubicación —localidad y provincia—, responsable).
@@ -150,12 +150,12 @@ Desarrollar una aplicación web en React que consuma la API de Gestock, ofrecien
 - Pantalla de inicio con estilo **dashboard**, que condense la información más relevante para el rol del usuario, agrupada por criterios como depósito, categoría o fecha. La información debe presentarse condensada (tarjetas, listados agrupados, indicadores), no como una tabla plana de todos los registros.
 - El contenido del dashboard varía según el rol del usuario autenticado:
   - **Administrador**: visión global de todos los depósitos. Stock y valorización total agrupados por depósito y por categoría, alertas de stock mínimo y de vencimientos de toda la empresa, últimos movimientos de todos los depósitos, y el total de órdenes de compra y transferencias pendientes de aprobación en cualquier depósito.
-  - **Gerente de Depósito**: la misma información que el Administrador, pero acotada únicamente a los depósitos a su cargo, incluyendo las órdenes de compra y transferencias que requieren su aprobación.
+  - **Gerente de Depósito**: la misma información que el Administrador, pero acotada únicamente al depósito a su cargo, incluyendo las órdenes de compra y transferencias que requieren su aprobación.
   - **Operario de Depósito**: vista acotada a su depósito asignado, orientada a la operación diaria: alertas de stock mínimo y de vencimientos, últimos movimientos registrados, el estado de las transferencias que solicitó y la cantidad de novedades no leídas de su depósito. No visualiza la valorización económica del inventario.
   - **Auditor**: la misma visión global que el Administrador, en modo solo lectura, sin botones ni acciones disponibles sobre lo que se muestra.
 
 **Gestión de datos maestros** (según permisos del rol)
-- ABM de usuarios y asignación de roles/depósitos (Administrador).
+- ABM de usuarios y asignación de rol y depósito (Administrador).
 - ABM de depósitos, categorías y proveedores.
 - ABM de productos, incluyendo configuración de stock mínimo.
 

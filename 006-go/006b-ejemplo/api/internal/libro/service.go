@@ -8,7 +8,7 @@ import "context"
 // implementación concreta (ver Clase 1 — "satisfacción implícita").
 //
 // Por ahora Service solo delega en el repository, sin reglas propias todavía
-// — el mismo punto en el que queda el TP al final de la Clase 2. La Clase 4
+// — el mismo punto en el que queda el TP al final de la Clase 2. La Clase 6
 // agrega ahí validaciones reales (ej. no permitir dos libros con el mismo
 // ISBN), que es donde un service empieza a ganar su lugar frente a delegar
 // directo del handler al repository.

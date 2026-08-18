@@ -82,6 +82,8 @@ import (
 
 	"biblioteca/api/internal/db"
 	"biblioteca/api/internal/libro"
+	"biblioteca/api/internal/middleware"
+	"biblioteca/api/internal/usuario"
 )
 
 func main() {
@@ -99,17 +101,32 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	coll := client.Database("biblioteca").Collection("libros")
+	database := client.Database("biblioteca")
+	libroColl := database.Collection("libros")
+	// "usuarios" es una colección propia, separada de "libros" — cada
+	// dominio tiene su propia colección, igual que tiene su propio paquete
+	// Go (ver Clase 2).
+	usuarioColl := database.Collection("usuarios")
 
 	// Cableado manual de dependencias: cada capa recibe la anterior por
 	// parámetro (inyección de dependencias explícita, sin ningún framework
-	// — ver Clase 4 para el porqué de este orden).
-	libroRepo := libro.NewMongoRepository(coll)
+	// — ver Clase 6 para el porqué de este orden).
+	libroRepo := libro.NewMongoRepository(libroColl)
 	libroService := libro.NewService(libroRepo)
 	libroHandler := libro.NewHandler(libroService)
 
+	usuarioRepo := usuario.NewMongoRepository(usuarioColl)
+	usuarioService := usuario.NewService(usuarioRepo)
+	usuarioHandler := usuario.NewHandler(usuarioService)
+
+	// authMiddleware se construye una sola vez acá y se pasa por parámetro a
+	// quien lo necesite (ver Clase 3 — "Middleware de autenticación") — así
+	// "usuario" no depende de una instancia global de "middleware".
+	authMiddleware := middleware.AuthMiddleware()
+
 	router := gin.Default()
 	libro.RegisterRoutes(router, libroHandler)
+	usuario.RegisterRoutes(router, usuarioHandler, authMiddleware)
 
 	router.Run(":8080")
 }

@@ -1,6 +1,6 @@
-# Ejercicios — Clase 4: Arquitectura, inyección de dependencias y testing
+# Ejercicios — Clase 6: Arquitectura, inyección de dependencias y testing
 
-Ejercicios de evaluación para la [Clase 4](../README.md#clase-4--arquitectura-inyección-de-dependencias-y-testing). Los Ejercicios 1 y 2 son de `testing`/`go test` puro, aplicados a structs e interfaces ya vistos en la Clase 1 (no tocan Gin ni Mongo). Los Ejercicios 3 a 6 parten de la arquitectura ya armada desde la Clase 2: paquete `internal/producto/` con `handler.go` → `service.go` → `Repository` (interfaz) → `MongoRepository`, `router.Group("/productos")` y DI manual en `main.go` — y evalúan si el patrón se entendió lo suficiente como para **extenderlo**, **testearlo** y **generalizarlo**.
+Ejercicios de evaluación para la [Clase 6](../README.md#clase-6--arquitectura-inyección-de-dependencias-y-testing). Los Ejercicios 1 y 2 son de `testing`/`go test` puro, aplicados a structs e interfaces ya vistos en la Clase 1 (no tocan Gin ni Mongo). Los Ejercicios 3 a 6 parten de la arquitectura ya armada desde la Clase 2: paquete `internal/producto/` con `handler.go` → `service.go` → `Repository` (interfaz) → `MongoRepository`, `router.Group("/productos")` y DI manual en `main.go` — y evalúan si el patrón se entendió lo suficiente como para **extenderlo**, **testearlo** y **generalizarlo**.
 
 ---
 

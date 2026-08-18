@@ -34,7 +34,7 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 // GetByID responde GET /libros/:id — c.Param("id") extrae el segmento de la
-// ruta declarado como ":id" (ver Clase 3 — "Parámetros de path vs. query
+// ruta declarado como ":id" (ver Clase 5 — "Parámetros de path vs. query
 // string").
 func (h *Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
@@ -48,7 +48,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 }
 
 // Buscar responde GET /libros/buscar?autor=... — a diferencia de GetByID, acá
-// el filtro llega por query string, no por path (ver Clase 3). Es un ejemplo
+// el filtro llega por query string, no por path (ver Clase 5). Es un ejemplo
 // simple de c.Query junto con c.DefaultQuery.
 func (h *Handler) Buscar(c *gin.Context) {
 	autor := c.Query("autor")
@@ -74,7 +74,7 @@ func (h *Handler) Buscar(c *gin.Context) {
 }
 
 // Create responde POST /libros. c.ShouldBindJSON parsea el body y valida los
-// tags `binding:"..."` de LibroDTO al mismo tiempo (ver Clase 3 — "Binding y
+// tags `binding:"..."` de LibroDTO al mismo tiempo (ver Clase 5 — "Binding y
 // validación con c.ShouldBindJSON").
 func (h *Handler) Create(c *gin.Context) {
 	var dto LibroDTO
@@ -131,7 +131,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// RegisterRoutes agrupa todas las rutas del dominio bajo /libros (ver Clase 3
+// RegisterRoutes agrupa todas las rutas del dominio bajo /libros (ver Clase 5
 // — "router.Group() — organizar rutas por dominio"). La ruta de búsqueda va
 // ANTES de "/:id" a propósito: si "/:id" estuviera primero, Gin interpretaría
 // "buscar" como un valor de :id y la ruta de búsqueda nunca se alcanzaría.

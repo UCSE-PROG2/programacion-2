@@ -8,7 +8,7 @@ import "go.mongodb.org/mongo-driver/v2/bson"
 
 // Libro es el struct que representa EXACTAMENTE un documento de la colección
 // "libros" en MongoDB. Los tags `bson:"..."` controlan cómo se serializa cada
-// campo al hablar con el driver (ver Clase 5 para el detalle de estos tags).
+// campo al hablar con el driver (ver Clase 4 para el detalle de estos tags).
 //
 // A propósito, ningún campo usa tags `json:"..."`: este struct nunca se
 // serializa directamente a JSON — de eso se encarga LibroDTO (dto.go).
