@@ -1112,6 +1112,35 @@ Con un `Dockerfile` mínimo en `api/` (build multi-stage con `golang` para compi
 
 Hasta acá la API está completa pero **abierta**: cualquiera puede hacer `POST`, `PUT` o `DELETE` sin identificarse. Esta clase cierra ese agujero en dos niveles, porque Gestock los necesita a los dos: **autenticación** (¿quién sos?) con JWT, y **autorización** (¿tenés permiso para esto?) por rol — casi ningún endpoint del TP es "autenticado sí/no", son "autenticado + rol correcto + depósito asignado".
 
+### Cómo se usa un JWT: login vs. petición protegida
+
+Un JWT participa en dos momentos completamente distintos, y conviene separarlos antes de ver código: **(1)** el login, donde el servidor lo **emite** una única vez, y **(2)** cada petición protegida posterior, donde el servidor lo **verifica** de nuevo — sin volver a tocar la base de usuarios ni pedir la contraseña otra vez. En Go/Gin, el paso (2) es exactamente el trabajo de un **middleware**: una función que intercepta la request antes de que llegue al handler y decide si la deja pasar.
+
+```mermaid
+flowchart TB
+    subgraph L["1. Login — el servidor EMITE el JWT (una vez)"]
+        direction LR
+        C1["Cliente"] -->|"POST /login\n{email, password}"| H1["Handler de Login\n(Gin)"]
+        H1 -->|"bcrypt.CompareHashAndPassword"| DB1[("MongoDB\ncolección usuarios")]
+        H1 -->|"credenciales OK →\njwt.NewWithClaims + SignedString"| T1["JWT firmado"]
+        T1 -->|"200 OK { token }"| C1
+    end
+
+    subgraph P["2. Petición protegida — el servidor VERIFICA el JWT (en cada request)"]
+        direction LR
+        C2["Cliente"] -->|"Authorization: Bearer &lt;token&gt;"| MW["AuthMiddleware()\ngin.HandlerFunc"]
+        MW -->|"jwt.ParseWithClaims"| V{"¿firma y\nexpiración OK?"}
+        V -- "no" --> R401["401 Unauthorized\nc.AbortWithStatusJSON"]
+        V -- "sí" --> SET["c.Set('usuario', claims)\nc.Next()"]
+        SET --> HND["Handler final\n(el que sí conoce la ruta)"]
+        HND -->|"200 OK"| C2
+    end
+
+    T1 -. "el cliente guarda el token (localStorage,\nmemoria, etc.) y lo reenvía en CADA\nrequest siguiente" .-> C2
+```
+
+Lo importante de este dibujo, llevado a Go: el **handler de login** (arriba) y el **handler final** protegido (abajo) son funciones completamente distintas y no se conocen entre sí — lo único que las conecta es el middleware `AuthMiddleware()`, que se registra **delante** de cualquier ruta que lo necesite (`router.Use(...)`, un grupo, o una ruta puntual — ver la sección de Middlewares más abajo) y corre en **todas** esas requests sin que cada handler tenga que reimplementar la validación del token. Si el middleware corta la cadena con `c.Abort...()`, el handler final directamente **no se ejecuta** — nunca ve una request sin un usuario válido.
+
 ### Por qué nunca se guarda una contraseña en texto plano
 
 Si la base de datos (o un archivo, o un `SELECT *` filtrado) se filtra, y las contraseñas están guardadas tal cual las escribió el usuario, el atacante obtiene acceso inmediato a esa cuenta — y, porque la gente reutiliza contraseñas, probablemente a otras cuentas del mismo usuario en otros sistemas.
