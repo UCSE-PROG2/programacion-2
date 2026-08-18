@@ -66,8 +66,16 @@ Secuencia real usada para armar `go.mod`/`go.sum` de este proyecto, parado en
 go mod init biblioteca/api                              # 1. crea go.mod
 go get github.com/gin-gonic/gin                          # 2. framework HTTP
 go get go.mongodb.org/mongo-driver/v2/mongo               # 3. driver de MongoDB
-go mod tidy                                                # 4. resuelve indirectas y go.sum
+go get github.com/golang-jwt/jwt/v5                        # 4. generar/validar JWT (internal/auth)
+go get golang.org/x/crypto/bcrypt                          # 5. hashear passwords (internal/auth)
+go mod tidy                                                # 6. resuelve indirectas y go.sum
 ```
+
+`golang.org/x/crypto/bcrypt` se usa en `internal/auth/hash.go` (`HashPassword`/
+`CheckPassword`) para nunca guardar una contraseña en texto plano, y
+`github.com/golang-jwt/jwt/v5` en `internal/auth/jwt.go`
+(`GenerarToken`/`ValidarToken`) para emitir y validar el token que
+`internal/middleware.AuthMiddleware` exige en `PUT /usuarios/password`.
 
 `go get` sin versión trae la última release estable de cada módulo; `go mod
 tidy` agrega las dependencias transitivas que falten y escribe sus checksums

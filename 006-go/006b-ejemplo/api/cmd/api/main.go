@@ -15,7 +15,7 @@
 //
 // Con Mongo arriba, desde la carpeta api/:
 //
-//	go mod tidy   # descarga gin y el driver de Mongo, escribe go.sum
+//	go mod tidy   # descarga gin, el driver de Mongo, golang-jwt/jwt y x/crypto/bcrypt, escribe go.sum
 //	go run ./cmd/api
 //
 // La API queda escuchando en http://localhost:8080.
