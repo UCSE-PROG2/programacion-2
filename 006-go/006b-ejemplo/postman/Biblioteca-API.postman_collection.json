@@ -1,12 +1,14 @@
 {
   "info": {
     "name": "Biblioteca API — Ejemplo Unidad 6 (Go)",
-    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Clases 1 y 2 de la Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB.\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. \"09 - Eliminar libro\" borra ese libro; \"10 - Buscar libro eliminado (404)\" confirma que ya no existe.\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
+    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB (Clases 1 y 2), más registro, login y cambio de contraseña del dominio \"Usuario\" con JWT + bcrypt (Clase 3).\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. \"09 - Eliminar libro\" borra ese libro; \"10 - Buscar libro eliminado (404)\" confirma que ya no existe. Los requests \"11\" a \"21\" son independientes de los de \"libro\" pero también deben correrse en orden: \"15 - Login\" guarda el token en `usuario_token`, que reutilizan los requests de cambio de contraseña (\"16\" a \"19\").\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
-    { "key": "libro_id", "value": "", "type": "string" }
+    { "key": "libro_id", "value": "", "type": "string" },
+    { "key": "usuario_email", "value": "postman@biblioteca.test", "type": "string" },
+    { "key": "usuario_token", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -251,6 +253,296 @@
           "path": ["libros", "{{libro_id}}"]
         },
         "description": "Confirma que el libro eliminado en el paso anterior ya no existe."
+      }
+    },
+    {
+      "name": "11 - Registrar usuario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201 Created', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "pm.test('devuelve id y email, sin password', () => {",
+              "  pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.email).to.eql(pm.collectionVariables.get('usuario_email'));",
+              "  pm.expect(body).to.not.have.property('password');",
+              "  pm.expect(body).to.not.have.property('passwordHash');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{usuario_email}}\",\n  \"password\": \"clave1234\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/registro", "host": ["{{base_url}}"], "path": ["usuarios", "registro"] },
+        "description": "POST /usuarios/registro — la contraseña se hashea con bcrypt antes de guardarse (internal/auth.HashPassword); la respuesta nunca incluye el hash (Clase 3)."
+      }
+    },
+    {
+      "name": "12 - Registrar usuario con email duplicado (409 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 409 Conflict', () => pm.response.to.have.status(409));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{usuario_email}}\",\n  \"password\": \"clave1234\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/registro", "host": ["{{base_url}}"], "path": ["usuarios", "registro"] },
+        "description": "Mismo email que \"11\" — Service.Registrar rechaza el alta con ErrEmailYaRegistrado ANTES de hashear la contraseña nueva."
+      }
+    },
+    {
+      "name": "13 - Registrar usuario con password corta (400 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"otro@biblioteca.test\",\n  \"password\": \"1234\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/registro", "host": ["{{base_url}}"], "path": ["usuarios", "registro"] },
+        "description": "\"1234\" tiene menos de 8 caracteres — falla por el tag `binding:\"required,min=8\"` de RegistroDTO, sin llegar a tocar la base."
+      }
+    },
+    {
+      "name": "14 - Login con contraseña incorrecta (401 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 401 Unauthorized', () => pm.response.to.have.status(401));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{usuario_email}}\",\n  \"password\": \"password-incorrecta\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/login", "host": ["{{base_url}}"], "path": ["usuarios", "login"] },
+        "description": "Service.Login devuelve el mismo ErrCredencialesInvalidas tanto si el email no existe como si la contraseña no coincide (Clase 3 — \"Login completo\")."
+      }
+    },
+    {
+      "name": "15 - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('devuelve un token JWT', () => pm.expect(body.token).to.be.a('string').and.not.empty);",
+              "pm.collectionVariables.set('usuario_token', body.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{usuario_email}}\",\n  \"password\": \"clave1234\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/login", "host": ["{{base_url}}"], "path": ["usuarios", "login"] },
+        "description": "POST /usuarios/login — bcrypt.CompareHashAndPassword contra el hash guardado y, si coincide, auth.GenerarToken firma un JWT nuevo. El token queda en la variable de colección `usuario_token` para los requests siguientes."
+      }
+    },
+    {
+      "name": "16 - Cambiar password sin token (401 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 401 Unauthorized', () => pm.response.to.have.status(401));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"passwordActual\": \"clave1234\",\n  \"passwordNueva\": \"claveNueva5678\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/password", "host": ["{{base_url}}"], "path": ["usuarios", "password"] },
+        "description": "Sin header Authorization — AuthMiddleware corta la cadena con c.AbortWithStatusJSON(401) antes de llegar al handler (Clase 3 — \"Middleware de autenticación\")."
+      }
+    },
+    {
+      "name": "17 - Cambiar password con token inválido (401 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 401 Unauthorized', () => pm.response.to.have.status(401));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer token-invalido" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"passwordActual\": \"clave1234\",\n  \"passwordNueva\": \"claveNueva5678\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/password", "host": ["{{base_url}}"], "path": ["usuarios", "password"] },
+        "description": "Token con formato de JWT incorrecto — auth.ValidarToken falla al parsear/verificar la firma."
+      }
+    },
+    {
+      "name": "18 - Cambiar password con contraseña actual incorrecta (401 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 401 Unauthorized', () => pm.response.to.have.status(401));",
+              "pm.test('responde con error', () => pm.expect(pm.response.json()).to.have.property('error'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{usuario_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"passwordActual\": \"password-incorrecta\",\n  \"passwordNueva\": \"claveNueva5678\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/password", "host": ["{{base_url}}"], "path": ["usuarios", "password"] },
+        "description": "Token válido (usuario autenticado), pero passwordActual no coincide con el hash guardado — Service.CambiarPassword devuelve ErrPasswordActualInvalida."
+      }
+    },
+    {
+      "name": "19 - Cambiar password",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status 204 No Content', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{usuario_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"passwordActual\": \"clave1234\",\n  \"passwordNueva\": \"claveNueva5678\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/password", "host": ["{{base_url}}"], "path": ["usuarios", "password"] },
+        "description": "PUT /usuarios/password — el \"reset pass\" autenticado: el ID del usuario sale del JWT (usuarioCtx), nunca del body, así que solo se puede cambiar la propia contraseña."
+      }
+    },
+    {
+      "name": "20 - Login con la contraseña vieja (401 esperado)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 401 Unauthorized', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{usuario_email}}\",\n  \"password\": \"clave1234\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/login", "host": ["{{base_url}}"], "path": ["usuarios", "login"] },
+        "description": "Confirma que \"19 - Cambiar password\" efectivamente sobreescribió el hash — la contraseña anterior ya no sirve para loguearse."
+      }
+    },
+    {
+      "name": "21 - Login con la contraseña nueva",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('devuelve un token JWT', () => pm.expect(body.token).to.be.a('string').and.not.empty);",
+              "pm.collectionVariables.set('usuario_token', body.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{usuario_email}}\",\n  \"password\": \"claveNueva5678\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/usuarios/login", "host": ["{{base_url}}"], "path": ["usuarios", "login"] },
+        "description": "Cierra el ciclo completo registro → login → cambio de contraseña → login con la contraseña nueva."
       }
     }
   ]
