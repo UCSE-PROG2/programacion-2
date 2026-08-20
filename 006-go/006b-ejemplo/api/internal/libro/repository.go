@@ -3,6 +3,7 @@ package libro
 import (
 	"context"
 	"errors"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -19,9 +20,29 @@ import (
 type Repository interface {
 	FindAll(ctx context.Context) ([]Libro, error)
 	FindByID(ctx context.Context, id string) (Libro, error)
+	Buscar(ctx context.Context, filtro BusquedaLibros) ([]Libro, error)
 	Create(ctx context.Context, l Libro) (Libro, error)
 	Update(ctx context.Context, id string, l Libro) (Libro, error)
 	Delete(ctx context.Context, id string) error
+}
+
+// BusquedaLibros agrupa todos los filtros opcionales de una búsqueda de
+// libros. Cada campo en su valor cero (string vacío, puntero nil, int 0,
+// time.Time{}) significa "no filtrar por esto" — es responsabilidad de
+// MongoRepository.Buscar armar el bson.M agregando SOLO las condiciones de
+// los campos que efectivamente vinieron cargados (ver Clase 4 — "Filtros
+// opcionales: armar el bson.M a partir de query params"). Vive acá, junto a
+// la interfaz, porque repository y service lo comparten sin que ninguno de
+// los dos sepa nada de HTTP — el handler es el único que traduce query
+// params a este struct.
+type BusquedaLibros struct {
+	Titulo     string    // aproximación de texto sobre el título ($regex, case-insensitive)
+	Autor      string    // igualdad exacta
+	Disponible *bool     // puntero: nil = no filtrar; valor = filtrar por ese booleano exacto
+	AnioDesde  int       // $gte sobre anio_edicion; 0 = sin límite inferior
+	AnioHasta  int       // $lte sobre anio_edicion; 0 = sin límite superior
+	FechaDesde time.Time // $gte sobre fecha_ingreso; time.Time{} = sin límite inferior
+	FechaHasta time.Time // $lte sobre fecha_ingreso; time.Time{} = sin límite superior
 }
 
 // MongoRepository es la única implementación de Repository: guarda libros en
@@ -81,6 +102,62 @@ func (r *MongoRepository) FindByID(ctx context.Context, id string) (Libro, error
 		return Libro{}, err
 	}
 	return l, nil
+}
+
+// Buscar arma un bson.M agregando SOLO las condiciones de los campos de
+// filtro que vinieron cargados en BusquedaLibros — el patrón de "filtros
+// opcionales" de la Clase 4. A diferencia de Buscar en versiones anteriores
+// de este handler (que traían TODO con FindAll y filtraban acá, en memoria,
+// con "if"), el filtrado completo lo hace Mongo: nunca se trae a Go un
+// documento que no matchea.
+func (r *MongoRepository) Buscar(ctx context.Context, filtro BusquedaLibros) ([]Libro, error) {
+	query := bson.M{}
+
+	if filtro.Titulo != "" {
+		// $regex + $options: "i" = aproximación de texto case-insensitive
+		// (busca "contiene", no exige coincidencia exacta como {titulo: x}).
+		query["titulo"] = bson.M{"$regex": filtro.Titulo, "$options": "i"}
+	}
+	if filtro.Autor != "" {
+		query["autor"] = filtro.Autor
+	}
+	if filtro.Disponible != nil {
+		query["disponible"] = *filtro.Disponible
+	}
+
+	if filtro.AnioDesde != 0 || filtro.AnioHasta != 0 {
+		anio := bson.M{}
+		if filtro.AnioDesde != 0 {
+			anio["$gte"] = filtro.AnioDesde
+		}
+		if filtro.AnioHasta != 0 {
+			anio["$lte"] = filtro.AnioHasta
+		}
+		query["anio_edicion"] = anio
+	}
+
+	if !filtro.FechaDesde.IsZero() || !filtro.FechaHasta.IsZero() {
+		fecha := bson.M{}
+		if !filtro.FechaDesde.IsZero() {
+			fecha["$gte"] = filtro.FechaDesde
+		}
+		if !filtro.FechaHasta.IsZero() {
+			fecha["$lte"] = filtro.FechaHasta
+		}
+		query["fecha_ingreso"] = fecha
+	}
+
+	cursor, err := r.coll.Find(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	libros := make([]Libro, 0)
+	if err := cursor.All(ctx, &libros); err != nil {
+		return nil, err
+	}
+	return libros, nil
 }
 
 func (r *MongoRepository) Create(ctx context.Context, l Libro) (Libro, error) {

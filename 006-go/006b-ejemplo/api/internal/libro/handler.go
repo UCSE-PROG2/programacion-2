@@ -2,6 +2,8 @@ package libro
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"fmt"
 
@@ -51,27 +53,85 @@ func (h *Handler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, l.ToDTO())
 }
 
-// Buscar responde GET /libros/buscar?autor=... — a diferencia de GetByID, acá
-// el filtro llega por query string, no por path (ver Clase 5). Es un ejemplo
-// simple de c.Query junto con c.DefaultQuery.
-func (h *Handler) Buscar(c *gin.Context) {
-	autor := c.Query("autor")
-	soloDisponibles := c.DefaultQuery("disponible", "false")
+// formatoFechaQuery es el layout esperado para fechaDesde/fechaHasta en la
+// query string de Buscar — mismo formato AAAA-MM-DD que LibroDTO.FechaIngreso
+// (dto.go), para que lo que se manda al crear un libro y lo que se usa para
+// filtrarlo se escriban igual.
+const formatoFechaQuery = "2006-01-02"
 
-	libros, err := h.service.ListarTodos(c.Request.Context())
+// Buscar responde GET /libros/buscar — TODOS los filtros son opcionales y se
+// combinan con AND (Clase 4 — "Filtros opcionales"): mandar solo los que
+// interesan. A diferencia de una versión anterior de este mismo handler (que
+// traía TODO con ListarTodos y filtraba acá, en memoria, con "if"), ahora se
+// arma un BusquedaLibros y es MongoRepository.Buscar quien arma el bson.M con
+// los operadores de Mongo — el filtrado lo hace la base, no Go.
+//
+//	titulo                -> aproximación de texto ($regex, case-insensitive)
+//	autor                 -> igualdad exacta
+//	disponible             -> true/false (si no viene, no filtra por disponibilidad)
+//	anioDesde / anioHasta  -> $gte/$lte sobre anio_edicion
+//	fechaDesde / fechaHasta -> $gte/$lte sobre fecha_ingreso (formato AAAA-MM-DD)
+func (h *Handler) Buscar(c *gin.Context) {
+	filtro := BusquedaLibros{
+		Titulo: c.Query("titulo"),
+		Autor:  c.Query("autor"),
+	}
+
+	if disponibleStr := c.Query("disponible"); disponibleStr != "" {
+		disponible, err := strconv.ParseBool(disponibleStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "disponible debe ser true o false"})
+			return
+		}
+		filtro.Disponible = &disponible
+	}
+
+	if anioDesdeStr := c.Query("anioDesde"); anioDesdeStr != "" {
+		anioDesde, err := strconv.Atoi(anioDesdeStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "anioDesde debe ser un número"})
+			return
+		}
+		filtro.AnioDesde = anioDesde
+	}
+	if anioHastaStr := c.Query("anioHasta"); anioHastaStr != "" {
+		anioHasta, err := strconv.Atoi(anioHastaStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "anioHasta debe ser un número"})
+			return
+		}
+		filtro.AnioHasta = anioHasta
+	}
+
+	if fechaDesdeStr := c.Query("fechaDesde"); fechaDesdeStr != "" {
+		fechaDesde, err := time.Parse(formatoFechaQuery, fechaDesdeStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "fechaDesde debe tener formato AAAA-MM-DD"})
+			return
+		}
+		filtro.FechaDesde = fechaDesde
+	}
+	if fechaHastaStr := c.Query("fechaHasta"); fechaHastaStr != "" {
+		fechaHasta, err := time.Parse(formatoFechaQuery, fechaHastaStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "fechaHasta debe tener formato AAAA-MM-DD"})
+			return
+		}
+		// time.Parse deja fechaHasta en la medianoche de ese día (00:00:00) —
+		// un $lte contra eso excluiría CUALQUIER libro ingresado más tarde
+		// ese mismo día. "fechaHasta=2024-01-31" tiene que incluir todo el
+		// 31, así que se corre al último instante del día antes de filtrar.
+		filtro.FechaHasta = fechaHasta.Add(24*time.Hour - time.Nanosecond)
+	}
+
+	libros, err := h.service.Buscar(c.Request.Context(), filtro)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	dtos := make([]LibroDTO, 0)
+	dtos := make([]LibroDTO, 0, len(libros))
 	for _, l := range libros {
-		if autor != "" && l.Autor != autor {
-			continue
-		}
-		if soloDisponibles == "true" && !l.Disponible {
-			continue
-		}
 		dtos = append(dtos, l.ToDTO())
 	}
 	c.JSON(http.StatusOK, dtos)

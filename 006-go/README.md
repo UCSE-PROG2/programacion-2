@@ -1570,6 +1570,126 @@ filtro := bson.M{"stock": bson.M{"$lt": stockMinimo}}
 cursor, err := r.coll.Find(ctx, filtro)
 ```
 
+### Filtros opcionales: armar el `bson.M` a partir de query params
+
+Hasta acá los filtros vistos son fijos: un `Find` con un `bson.M` que siempre busca por el mismo campo. En la práctica, un endpoint de búsqueda casi siempre recibe **varios parámetros y todos son opcionales** (`GET /productos?nombre=...&precioMin=...&precioMax=...`, ninguno obligatorio) — armar ese filtro no es escribir un `bson.M` fijo, sino ir agregando condiciones **solo si el parámetro llegó**:
+
+```go
+type BusquedaProductos struct {
+    Nombre    string
+    PrecioMin float64
+    PrecioMax float64
+}
+
+func (r *MongoRepository) Buscar(ctx context.Context, f BusquedaProductos) ([]Producto, error) {
+    filtro := bson.M{}
+
+    if f.Nombre != "" {
+        filtro["nombre"] = f.Nombre
+    }
+
+    if f.PrecioMin != 0 || f.PrecioMax != 0 {
+        precio := bson.M{}
+        if f.PrecioMin != 0 {
+            precio["$gte"] = f.PrecioMin
+        }
+        if f.PrecioMax != 0 {
+            precio["$lte"] = f.PrecioMax
+        }
+        filtro["precio"] = precio
+    }
+
+    cursor, err := r.coll.Find(ctx, filtro)
+    if err != nil {
+        return nil, err
+    }
+    defer cursor.Close(ctx)
+
+    var productos []Producto
+    if err := cursor.All(ctx, &productos); err != nil {
+        return nil, err
+    }
+    return productos, nil
+}
+```
+
+> **Concepto clave**: `bson.M` es un `map[string]interface{}` común y corriente — no hay nada mágico en "agregar una clave condicionalmente", es el mismo `if` que se usaría para armar cualquier map en Go. Las claves del filtro se combinan entre sí con un AND implícito (Mongo interpreta `{a: 1, b: 2}` como "a=1 Y b=2"), así que no hace falta escribir `$and` a mano salvo que dos condiciones deban aplicar sobre el **mismo** campo con operadores incompatibles.
+
+El error más común acá es escribir siempre el filtro completo y dejar que el operador "no filtre" con un valor neutro (ej: agregar `{"$gte": 0}` cuando no vino `precioMin`, asumiendo que ningún precio es negativo). Funciona por accidente hasta que deja de ser cierto — un producto en promoción con `precio: -100`, o directamente un campo booleano, donde no existe ningún valor neutro posible. La única forma robusta es no agregar la clave al `bson.M` en absoluto, como en el ejemplo de arriba.
+
+### Búsqueda aproximada de texto con `$regex`
+
+Un filtro por igualdad (`{ nombre: "Mouse" }`) exige que el valor coincida EXACTO. Para una búsqueda tipo "contiene" (lo que un usuario espera al escribir en un buscador), Mongo ofrece el operador `$regex`:
+
+```go
+filtro["nombre"] = bson.M{"$regex": texto, "$options": "i"}
+```
+
+| Elemento | Qué hace |
+|---|---|
+| `$regex: texto` | Interpreta `texto` como una expresión regular y busca una coincidencia **en cualquier parte** del valor del campo (no exige que sea igual de punta a punta) |
+| `$options: "i"` | *Case-insensitive*: "MOUSE", "mouse" y "Mouse" matchean igual |
+
+```js
+// mongosh — el equivalente exacto de lo de arriba
+db.productos.find({ nombre: { $regex: "mouse", $options: "i" } })
+```
+
+> **Concepto clave**: `$regex` sin índice hace un *collection scan* (recorre documento por documento) — aceptable para una colección chica como la del TP, pero no escala a millones de documentos. Para eso Mongo tiene un [índice de texto](https://www.mongodb.com/docs/manual/core/index-text/) (`db.productos.createIndex({ nombre: "text" })`) y el operador `$text`/`$search`, que sí usan índice — queda fuera del alcance de esta clase, pero vale saber que existe si la búsqueda de texto se vuelve un cuello de botella real.
+
+Si el texto que escribe el usuario puede contener caracteres especiales de regex (`.`, `*`, `(`, `)`, …), conviene escaparlos con [`regexp.QuoteMeta`](https://pkg.go.dev/regexp#QuoteMeta) de la librería estándar antes de mandarlos a Mongo — si no, alguien buscando literalmente `"C++"` termina disparando una regex inválida, o con un significado distinto al que escribió.
+
+### Búsqueda por rango de fechas
+
+Mongo tiene un tipo `Date` nativo en BSON (no un string) — en Go, el driver lo mapea directo a [`time.Time`](https://pkg.go.dev/time#Time) de la librería estándar, sin ningún tag especial:
+
+```go
+type Producto struct {
+    ID           bson.ObjectID `bson:"_id,omitempty"`
+    Nombre       string        `bson:"nombre"`
+    FechaIngreso time.Time     `bson:"fecha_ingreso"`
+}
+```
+
+Un rango de fechas se arma exactamente igual que un rango numérico — mismos operadores `$gte`/`$lte`, aplicados sobre un `time.Time` en vez de un `float64`:
+
+```go
+if !f.FechaDesde.IsZero() || !f.FechaHasta.IsZero() {
+    fecha := bson.M{}
+    if !f.FechaDesde.IsZero() {
+        fecha["$gte"] = f.FechaDesde
+    }
+    if !f.FechaHasta.IsZero() {
+        fecha["$lte"] = f.FechaHasta
+    }
+    filtro["fecha_ingreso"] = fecha
+}
+```
+
+`time.Time{}` (el struct sin inicializar) es el "cero" de este tipo, el equivalente a `0` para un `int` o `""` para un `string` — por eso `IsZero()` cumple acá el mismo rol que `f.PrecioMin != 0` en el ejemplo anterior: decide si ese extremo del rango vino cargado o no.
+
+En el handler, la fecha llega como texto (`?fechaDesde=2024-01-01`) y hay que parsearla explícitamente con [`time.Parse`](https://pkg.go.dev/time#Parse) antes de pasarla al repository — a diferencia de un `int` (`strconv.Atoi`) o un `bool` (`strconv.ParseBool`), no hay una única forma de escribir una fecha en texto, así que Go obliga a decir explícitamente qué formato se espera:
+
+```go
+fechaDesde, err := time.Parse("2006-01-02", c.Query("fechaDesde"))
+if err != nil {
+    c.JSON(http.StatusBadRequest, gin.H{"error": "fechaDesde debe tener formato AAAA-MM-DD"})
+    return
+}
+```
+
+> **Concepto clave**: `"2006-01-02"` no es un ejemplo aleatorio — es el *layout* de referencia de Go para fechas: en vez de códigos como `%Y-%m-%d`, Go usa una fecha real (`2006-01-02 15:04:05`, correspondiente a `01/02 03:04:05PM '06 -0700`) como plantilla, y cada función de formateo/parseo se apoya en cómo se ve ESA fecha particular escrita en el formato deseado.
+
+Una trampa clásica del extremo superior de un rango de fechas: `time.Parse("2006-01-02", "2024-01-31")` da como resultado la MEDIANOCHE de ese día (`2024-01-31 00:00:00`), no el final del día. Si ese valor se usa tal cual en un `$lte`, cualquier documento cargado esa misma tarde queda afuera del resultado — un bug real, no hipotético, que aparece apenas se prueba el filtro contra datos cargados "hoy":
+
+```go
+// mal: excluye todo lo cargado el 31/01 después de las 00:00
+fecha["$lte"] = fechaHasta
+
+// bien: corre el límite al último instante de ese mismo día
+fecha["$lte"] = fechaHasta.Add(24*time.Hour - time.Nanosecond)
+```
+
 ### Por qué `model.go` y `dto.go` son dos structs distintos
 
 Una alternativa más corta a lo que armamos en la Clase 2 sería tener **un solo** struct `Producto`, con tags `json`, `bson` y `binding` los tres juntos en los mismos campos, y usarlo en todas las capas. Funciona para un ejemplo chico, pero tiene un problema de fondo: mezcla dos formatos que cambian por razones distintas y en momentos distintos.

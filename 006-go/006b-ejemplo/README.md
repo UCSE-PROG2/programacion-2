@@ -126,9 +126,9 @@ quedó un `go run` anterior colgado), matar el proceso que lo tiene:
 | Método | Ruta | Body |
 |---|---|---|
 | `GET` | `/libros` | — |
-| `GET` | `/libros/buscar?autor=...&disponible=...` | — |
+| `GET` | `/libros/buscar?titulo=...&autor=...&disponible=...&anioDesde=...&anioHasta=...&fechaDesde=...&fechaHasta=...` | — |
 | `GET` | `/libros/:id` | — |
-| `POST` | `/libros` | `{"titulo","autor","isbn","anio_edicion","disponible"}` |
+| `POST` | `/libros` | `{"titulo","autor","isbn","anio_edicion","disponible","fecha_ingreso"}` |
 | `PUT` | `/libros/:id` | ídem |
 | `DELETE` | `/libros/:id` | — |
 | `POST` | `/usuarios/registro` | `{"email","password"}` |
@@ -138,7 +138,37 @@ quedó un `go run` anterior colgado), matar el proceso que lo tiene:
 ```bash
 curl -X POST http://localhost:8080/libros \
   -H "Content-Type: application/json" \
-  -d '{"titulo":"Cien años de soledad","autor":"Gabriel García Márquez","isbn":"978-0307474728","anio_edicion":1967,"disponible":true}'
+  -d '{"titulo":"Cien años de soledad","autor":"Gabriel García Márquez","isbn":"978-0307474728","anio_edicion":1967,"disponible":true,"fecha_ingreso":"1970-06-05"}'
+```
+
+### Búsqueda (`GET /libros/buscar`)
+
+Todos los parámetros son opcionales y se combinan con AND — ver Clase 4 del
+readme de la unidad ("Filtros opcionales: armar el `bson.M` a partir de query
+params") para el detalle de cómo `internal/libro/repository.go` arma el
+filtro de Mongo a partir de `BusquedaLibros`, sin traer nunca a memoria un
+documento que no matchea:
+
+| Parámetro | Tipo de filtro | Operador Mongo |
+|---|---|---|
+| `titulo` | Aproximación de texto, case-insensitive (busca "contiene") | `$regex` + `$options: "i"` |
+| `autor` | Igualdad exacta | — |
+| `disponible` | Igualdad exacta (`true`/`false`) | — |
+| `anioDesde` / `anioHasta` | Rango numérico sobre `anio_edicion` | `$gte` / `$lte` |
+| `fechaDesde` / `fechaHasta` | Rango de fechas sobre `fecha_ingreso` (formato `AAAA-MM-DD`) | `$gte` / `$lte` |
+
+```bash
+# Título aproximado
+curl "http://localhost:8080/libros/buscar?titulo=soledad"
+
+# Rango de año de edición
+curl "http://localhost:8080/libros/buscar?anioDesde=1960&anioHasta=1965"
+
+# Rango de fecha de ingreso
+curl "http://localhost:8080/libros/buscar?fechaDesde=2024-01-01&fechaHasta=2024-12-31"
+
+# Combinando varios filtros a la vez
+curl "http://localhost:8080/libros/buscar?autor=Gabriel%20Garc%C3%ADa%20M%C3%A1rquez&disponible=false&anioHasta=1965"
 ```
 
 ### Usuarios (registro, login y cambio de contraseña)
@@ -170,7 +200,8 @@ curl -X PUT http://localhost:8080/usuarios/password \
 
 ## Postman
 
-`postman/Biblioteca-API.postman_collection.json` — 10 requests en orden
-(crear → listar → buscar → actualizar → eliminar → 404), con tests
-automáticos y `base_url` precargada en `http://localhost:8080`. Import →
-correr con la API arriba.
+`postman/Biblioteca-API.postman_collection.json` — 25 requests en orden
+(crear → listar → buscar con cada filtro opcional por separado y combinados →
+actualizar → eliminar → 404 → registro/login/cambio de password de usuario),
+con tests automáticos y `base_url` precargada en `http://localhost:8080`.
+Import → correr con la API arriba.

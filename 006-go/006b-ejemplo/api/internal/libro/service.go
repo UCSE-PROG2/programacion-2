@@ -1,6 +1,9 @@
 package libro
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Service contiene la lógica de negocio del dominio "libro" — reglas que no
 // son ni HTTP ni persistencia. El campo "repo" es la INTERFAZ Repository, no
@@ -31,7 +34,18 @@ func (s *Service) BuscarPorID(ctx context.Context, id string) (Libro, error) {
 	return s.repo.FindByID(ctx, id)
 }
 
+func (s *Service) Buscar(ctx context.Context, filtro BusquedaLibros) ([]Libro, error) {
+	return s.repo.Buscar(ctx, filtro)
+}
+
 func (s *Service) Crear(ctx context.Context, l Libro) (Libro, error) {
+	// Completar campos automáticos (que el cliente no manda) es
+	// responsabilidad del service, no del handler ni del repository (ver
+	// Clase 6 — "Auditoría: campos comunes a todo documento"): si no vino
+	// fecha_ingreso en el DTO, se asume que el libro ingresa HOY.
+	if l.FechaIngreso.IsZero() {
+		l.FechaIngreso = time.Now()
+	}
 	return s.repo.Create(ctx, l)
 }
 

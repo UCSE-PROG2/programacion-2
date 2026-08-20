@@ -1,6 +1,16 @@
 package libro
 
-import "go.mongodb.org/mongo-driver/v2/bson"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
+
+// formatoFechaIngreso es el layout ("2006-01-02" = AAAA-MM-DD) con el que
+// FechaIngreso viaja en el JSON: una fecha simple, sin hora ni huso horario,
+// que es lo único que le pedimos al cliente (ver Clase 4 — "Búsqueda por
+// rango de fechas" para el porqué de ese layout puntual).
+const formatoFechaIngreso = "2006-01-02"
 
 // LibroDTO es el struct que efectivamente viaja en el JSON de entrada y salida
 // de la API. Es un tipo DISTINTO de Libro a propósito (ver Clase 2 — "El DTO:
@@ -16,13 +26,20 @@ type LibroDTO struct {
 	ISBN        string `json:"isbn" binding:"required"`
 	AnioEdicion int    `json:"anio_edicion" binding:"required,gt=0"`
 	Disponible  bool   `json:"disponible"`
+	// FechaIngreso es opcional (sin binding:"required"): si no viene, ToModel
+	// devuelve el time.Time cero y es Service.Crear quien lo completa con la
+	// fecha actual al dar de alta (ver Clase 6 — "completar campos
+	// automáticos es responsabilidad del service"). En un PUT, no mandarlo
+	// resetea el campo a la fecha cero, igual que pasa con cualquier otro
+	// campo omitido en este ejemplo de reemplazo completo.
+	FechaIngreso string `json:"fecha_ingreso,omitempty"`
 }
 
 // ToDTO convierte un Libro (modelo de Mongo) en un LibroDTO (JSON de salida).
 // Es un value receiver: solo lee el struct, no lo modifica (ver Clase 1 —
 // "Métodos con receiver: value vs. pointer").
 func (l Libro) ToDTO() LibroDTO {
-	return LibroDTO{
+	dto := LibroDTO{
 		ID:          l.ID.Hex(),
 		Titulo:      l.Titulo,
 		Autor:       l.Autor,
@@ -30,6 +47,10 @@ func (l Libro) ToDTO() LibroDTO {
 		AnioEdicion: l.AnioEdicion,
 		Disponible:  l.Disponible,
 	}
+	if !l.FechaIngreso.IsZero() {
+		dto.FechaIngreso = l.FechaIngreso.Format(formatoFechaIngreso)
+	}
+	return dto
 }
 
 // ToModel convierte un LibroDTO (JSON de entrada) en un Libro (lo que persiste
@@ -45,6 +66,14 @@ func (dto LibroDTO) ToModel() (Libro, error) {
 		ISBN:        dto.ISBN,
 		AnioEdicion: dto.AnioEdicion,
 		Disponible:  dto.Disponible,
+	}
+
+	if dto.FechaIngreso != "" {
+		fecha, err := time.Parse(formatoFechaIngreso, dto.FechaIngreso)
+		if err != nil {
+			return Libro{}, err
+		}
+		l.FechaIngreso = fecha
 	}
 
 	if dto.ID == "" {

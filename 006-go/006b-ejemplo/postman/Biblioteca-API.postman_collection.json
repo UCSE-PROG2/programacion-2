@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Biblioteca API — Ejemplo Unidad 6 (Go)",
-    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB (Clases 1 y 2), más registro, login y cambio de contraseña del dominio \"Usuario\" con JWT + bcrypt (Clase 3).\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. \"09 - Eliminar libro\" borra ese libro; \"10 - Buscar libro eliminado (404)\" confirma que ya no existe. Los requests \"11\" a \"21\" son independientes de los de \"libro\" pero también deben correrse en orden: \"15 - Login\" guarda el token en `usuario_token`, que reutilizan los requests de cambio de contraseña (\"16\" a \"19\").\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
+    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB (Clases 1 y 2), búsqueda con filtros opcionales de Mongo (Clase 4), más registro, login y cambio de contraseña del dominio \"Usuario\" con JWT + bcrypt (Clase 3).\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. Los requests \"07\" a \"10\" prueban /libros/buscar con distintos filtros (título aproximado, rango de año, rango de fecha de ingreso, y varios combinados) sobre los dos libros creados en \"01\" y \"02\". \"13 - Eliminar libro\" borra el libro de \"01\"; \"14 - Buscar libro eliminado (404)\" confirma que ya no existe. Los requests \"15\" a \"25\" son independientes de los de \"libro\" pero también deben correrse en orden: \"19 - Login\" guarda el token en `usuario_token`, que reutilizan los requests de cambio de contraseña (\"20\" a \"23\").\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -32,10 +32,10 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"titulo\": \"Cien años de soledad\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474728\",\n  \"anio_edicion\": 1967,\n  \"disponible\": true\n}"
+          "raw": "{\n  \"titulo\": \"Cien años de soledad\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474728\",\n  \"anio_edicion\": 1967,\n  \"disponible\": true,\n  \"fecha_ingreso\": \"1970-06-05\"\n}"
         },
         "url": { "raw": "{{base_url}}/libros", "host": ["{{base_url}}"], "path": ["libros"] },
-        "description": "POST /libros — alta de un libro. Gin valida el body con los tags `binding:\"...\"` de LibroDTO antes de llegar al service."
+        "description": "POST /libros — alta de un libro. Gin valida el body con los tags `binding:\"...\"` de LibroDTO antes de llegar al service. \"fecha_ingreso\" viene explícito (formato AAAA-MM-DD) para dejar un libro con una fecha vieja, distinta de la de \"02\" (que no la manda y queda con la fecha de hoy) — así el filtro por rango de fechas de \"09\" tiene algo que descartar."
       }
     },
     {
@@ -57,7 +57,7 @@
           "raw": "{\n  \"titulo\": \"El coronel no tiene quien le escriba\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474711\",\n  \"anio_edicion\": 1961,\n  \"disponible\": false\n}"
         },
         "url": { "raw": "{{base_url}}/libros", "host": ["{{base_url}}"], "path": ["libros"] },
-        "description": "Segundo libro del mismo autor, con disponible=false — sirve para probar el filtro de /libros/buscar."
+        "description": "Segundo libro del mismo autor, con disponible=false y sin \"fecha_ingreso\" (Service.Crear lo completa con la fecha de hoy) — sirve para probar los filtros de /libros/buscar."
       }
     },
     {
@@ -158,7 +158,157 @@
       }
     },
     {
-      "name": "07 - Obtener libro por id",
+      "name": "07 - Buscar por título aproximado (texto)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('todos los resultados contienen \"soledad\" en el título (case-insensitive)', () => {",
+              "  body.forEach(l => pm.expect(l.titulo.toLowerCase()).to.include('soledad'));",
+              "});",
+              "pm.test('encuentra \"Cien años de soledad\" con una búsqueda parcial en minúsculas', () => {",
+              "  pm.expect(body.some(l => l.titulo === 'Cien años de soledad')).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/buscar?titulo=soledad",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "buscar"],
+          "query": [{ "key": "titulo", "value": "soledad" }]
+        },
+        "description": "GET /libros/buscar?titulo=soledad — aproximación de texto con $regex + $options:\"i\" (MongoRepository.Buscar, Clase 4): matchea \"Cien años de soledad\" con una búsqueda parcial y en minúsculas, algo que un filtro por igualdad ({titulo: \"soledad\"}) nunca encontraría."
+      }
+    },
+    {
+      "name": "08 - Buscar por rango de año de edición",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('todos los resultados tienen anio_edicion entre 1960 y 1965', () => {",
+              "  body.forEach(l => {",
+              "    pm.expect(l.anio_edicion).to.be.at.least(1960);",
+              "    pm.expect(l.anio_edicion).to.be.at.most(1965);",
+              "  });",
+              "});",
+              "pm.test('incluye \"El coronel no tiene quien le escriba\" (1961)', () => {",
+              "  pm.expect(body.some(l => l.titulo === 'El coronel no tiene quien le escriba')).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/buscar?anioDesde=1960&anioHasta=1965",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "buscar"],
+          "query": [
+            { "key": "anioDesde", "value": "1960" },
+            { "key": "anioHasta", "value": "1965" }
+          ]
+        },
+        "description": "GET /libros/buscar?anioDesde=1960&anioHasta=1965 — rango numérico sobre anio_edicion con $gte/$lte combinados (Clase 4): deja afuera a \"Cien años de soledad\" (1967, fuera de rango) y encuentra a \"El coronel no tiene quien le escriba\" (1961)."
+      }
+    },
+    {
+      "name": "09 - Buscar por rango de fecha de ingreso",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.variables.set('fechaHoy', new Date().toISOString().slice(0, 10));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('incluye \"El coronel no tiene quien le escriba\" (fecha_ingreso = hoy)', () => {",
+              "  pm.expect(body.some(l => l.titulo === 'El coronel no tiene quien le escriba')).to.be.true;",
+              "});",
+              "pm.test('no incluye \"Cien años de soledad\" (fecha_ingreso = 1970-06-05, fuera de rango)', () => {",
+              "  pm.expect(body.some(l => l.titulo === 'Cien años de soledad')).to.be.false;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/buscar?fechaDesde={{fechaHoy}}&fechaHasta={{fechaHoy}}",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "buscar"],
+          "query": [
+            { "key": "fechaDesde", "value": "{{fechaHoy}}" },
+            { "key": "fechaHasta", "value": "{{fechaHoy}}" }
+          ]
+        },
+        "description": "GET /libros/buscar?fechaDesde=...&fechaHasta=... — rango de FECHAS sobre fecha_ingreso con $gte/$lte (Clase 4), mismo patrón que el rango numérico pero sobre un time.Time/BSON Date. El pre-request script calcula la fecha de hoy (AAAA-MM-DD) y la guarda en la variable local {{fechaHoy}}: \"02\" se creó hoy (sin fecha_ingreso explícito, Service.Crear la completó), \"01\" se creó con 1970-06-05 explícito — por eso este rango encuentra uno y no el otro."
+      }
+    },
+    {
+      "name": "10 - Buscar combinando varios filtros a la vez",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('todos los resultados cumplen los tres filtros combinados (AND)', () => {",
+              "  body.forEach(l => {",
+              "    pm.expect(l.autor).to.eql('Gabriel García Márquez');",
+              "    pm.expect(l.disponible).to.eql(false);",
+              "    pm.expect(l.anio_edicion).to.be.at.most(1965);",
+              "  });",
+              "});",
+              "pm.test('encuentra exactamente \"El coronel no tiene quien le escriba\"', () => {",
+              "  pm.expect(body.some(l => l.titulo === 'El coronel no tiene quien le escriba')).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/libros/buscar?autor=Gabriel García Márquez&disponible=false&anioHasta=1965",
+          "host": ["{{base_url}}"],
+          "path": ["libros", "buscar"],
+          "query": [
+            { "key": "autor", "value": "Gabriel García Márquez" },
+            { "key": "disponible", "value": "false" },
+            { "key": "anioHasta", "value": "1965" }
+          ]
+        },
+        "description": "GET /libros/buscar combinando autor + disponible + anioHasta a la vez — cada parámetro agrega UNA clave al bson.M (Clase 4 — \"Filtros opcionales\"), y Mongo las combina todas con AND implícito: descarta \"Cien años de soledad\" (autor coincide, pero disponible=true y anio_edicion=1967 no cumplen los otros dos filtros)."
+      }
+    },
+    {
+      "name": "11 - Obtener libro por id",
       "event": [
         {
           "listen": "test",
@@ -182,7 +332,7 @@
       }
     },
     {
-      "name": "08 - Actualizar libro (marcar prestado)",
+      "name": "12 - Actualizar libro (marcar prestado)",
       "event": [
         {
           "listen": "test",
@@ -200,18 +350,18 @@
         "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"titulo\": \"Cien años de soledad\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474728\",\n  \"anio_edicion\": 1967,\n  \"disponible\": false\n}"
+          "raw": "{\n  \"titulo\": \"Cien años de soledad\",\n  \"autor\": \"Gabriel García Márquez\",\n  \"isbn\": \"978-0307474728\",\n  \"anio_edicion\": 1967,\n  \"disponible\": false,\n  \"fecha_ingreso\": \"1970-06-05\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/libros/{{libro_id}}",
           "host": ["{{base_url}}"],
           "path": ["libros", "{{libro_id}}"]
         },
-        "description": "PUT /libros/:id — simula el préstamo del libro (disponible: true → false)."
+        "description": "PUT /libros/:id — simula el préstamo del libro (disponible: true → false). Repite \"fecha_ingreso\" del alta original: este PUT reemplaza el documento completo, así que un campo omitido queda en su valor cero (ver LibroDTO.FechaIngreso en dto.go)."
       }
     },
     {
-      "name": "09 - Eliminar libro",
+      "name": "13 - Eliminar libro",
       "event": [
         {
           "listen": "test",
@@ -232,7 +382,7 @@
       }
     },
     {
-      "name": "10 - Buscar libro eliminado (404 esperado)",
+      "name": "14 - Buscar libro eliminado (404 esperado)",
       "event": [
         {
           "listen": "test",
@@ -256,7 +406,7 @@
       }
     },
     {
-      "name": "11 - Registrar usuario",
+      "name": "15 - Registrar usuario",
       "event": [
         {
           "listen": "test",
@@ -287,7 +437,7 @@
       }
     },
     {
-      "name": "12 - Registrar usuario con email duplicado (409 esperado)",
+      "name": "16 - Registrar usuario con email duplicado (409 esperado)",
       "event": [
         {
           "listen": "test",
@@ -312,7 +462,7 @@
       }
     },
     {
-      "name": "13 - Registrar usuario con password corta (400 esperado)",
+      "name": "17 - Registrar usuario con password corta (400 esperado)",
       "event": [
         {
           "listen": "test",
@@ -337,7 +487,7 @@
       }
     },
     {
-      "name": "14 - Login con contraseña incorrecta (401 esperado)",
+      "name": "18 - Login con contraseña incorrecta (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -362,7 +512,7 @@
       }
     },
     {
-      "name": "15 - Login",
+      "name": "19 - Login",
       "event": [
         {
           "listen": "test",
@@ -389,7 +539,7 @@
       }
     },
     {
-      "name": "16 - Cambiar password sin token (401 esperado)",
+      "name": "20 - Cambiar password sin token (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -414,7 +564,7 @@
       }
     },
     {
-      "name": "17 - Cambiar password con token inválido (401 esperado)",
+      "name": "21 - Cambiar password con token inválido (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -442,7 +592,7 @@
       }
     },
     {
-      "name": "18 - Cambiar password con contraseña actual incorrecta (401 esperado)",
+      "name": "22 - Cambiar password con contraseña actual incorrecta (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -470,7 +620,7 @@
       }
     },
     {
-      "name": "19 - Cambiar password",
+      "name": "23 - Cambiar password",
       "event": [
         {
           "listen": "test",
@@ -495,7 +645,7 @@
       }
     },
     {
-      "name": "20 - Login con la contraseña vieja (401 esperado)",
+      "name": "24 - Login con la contraseña vieja (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -519,7 +669,7 @@
       }
     },
     {
-      "name": "21 - Login con la contraseña nueva",
+      "name": "25 - Login con la contraseña nueva",
       "event": [
         {
           "listen": "test",
