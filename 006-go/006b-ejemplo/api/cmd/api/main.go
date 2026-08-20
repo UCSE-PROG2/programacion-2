@@ -125,7 +125,7 @@ func main() {
 	authMiddleware := middleware.AuthMiddleware()
 
 	router := gin.Default()
-	libro.RegisterRoutes(router, libroHandler)
+	libro.RegisterRoutes(router, libroHandler, authMiddleware)
 	usuario.RegisterRoutes(router, usuarioHandler, authMiddleware)
 
 	router.Run(":8080")

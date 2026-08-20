@@ -53,6 +53,8 @@ var _ Repository = (*MongoRepository)(nil)
 
 func (r *MongoRepository) FindAll(ctx context.Context) ([]Libro, error) {
 	cursor, err := r.coll.Find(ctx, bson.M{})
+	//agregar un filtro para obtener unicamente los docs del usuarioID
+	//where (x.id_usuario_creado = user.UsuarioID)
 	if err != nil {
 		return nil, err
 	}

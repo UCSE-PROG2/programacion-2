@@ -3,6 +3,8 @@ package libro
 import (
 	"net/http"
 
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +22,8 @@ func NewHandler(service *Service) *Handler {
 
 // List responde GET /libros — devuelve todos los libros.
 func (h *Handler) List(c *gin.Context) {
+	usuarioContexto, _ := c.Get("usuarioContexto")
+	fmt.Println(usuarioContexto)
 	libros, err := h.service.ListarTodos(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -135,14 +139,14 @@ func (h *Handler) Delete(c *gin.Context) {
 // — "router.Group() — organizar rutas por dominio"). La ruta de búsqueda va
 // ANTES de "/:id" a propósito: si "/:id" estuviera primero, Gin interpretaría
 // "buscar" como un valor de :id y la ruta de búsqueda nunca se alcanzaría.
-func RegisterRoutes(router *gin.Engine, h *Handler) {
+func RegisterRoutes(router *gin.Engine, h *Handler, authMiddleware gin.HandlerFunc) {
 	libros := router.Group("/libros")
 	{
-		libros.GET("", h.List)
-		libros.GET("/buscar", h.Buscar)
-		libros.GET("/:id", h.GetByID)
-		libros.POST("", h.Create)
-		libros.PUT("/:id", h.Update)
-		libros.DELETE("/:id", h.Delete)
+		libros.GET("", authMiddleware, h.List)
+		libros.GET("/buscar", authMiddleware, h.Buscar)
+		libros.GET("/:id", authMiddleware, h.GetByID)
+		libros.POST("", authMiddleware, h.Create)
+		libros.PUT("/:id", authMiddleware, h.Update)
+		libros.DELETE("/:id", authMiddleware, h.Delete)
 	}
 }
