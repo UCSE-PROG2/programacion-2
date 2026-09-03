@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"biblioteca/api/internal/auth"
+	"recetario/api/internal/auth"
 )
 
 // Errores de negocio propios del dominio, distinguibles con errors.Is desde

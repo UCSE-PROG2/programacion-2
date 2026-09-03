@@ -1,0 +1,20 @@
+- generic [ref=e14]:
+  - banner [ref=e15]:
+    - generic [ref=e16]: 🍳 Recetario
+    - navigation [ref=e17]:
+      - link "Inicio" [ref=e18] [cursor=pointer]:
+        - /url: /
+      - link "Recetas" [ref=e19] [cursor=pointer]:
+        - /url: /recetas
+    - generic [ref=e20]:
+      - generic [ref=e21]: chef@test.com
+      - button "Cerrar sesión" [ref=e22] [cursor=pointer]
+  - main [ref=e23]:
+    - generic [ref=e24]:
+      - heading "Hola, chef@test.com" [level=1] [ref=e25]
+      - generic [ref=e26]:
+        - generic [ref=e27]: ID
+        - generic [ref=e28]: 6a9761c3c49e966045e0e058
+      - generic [ref=e29]:
+        - generic [ref=e30]: Email
+        - generic [ref=e31]: chef@test.com

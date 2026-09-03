@@ -1,0 +1,14 @@
+- generic [ref=f4e4]:
+  - heading "Iniciar sesión" [level=1] [ref=f4e5]
+  - generic [ref=f4e6]:
+    - generic [ref=f4e7]:
+      - text: Email
+      - textbox "Email" [ref=f4e8]
+    - generic [ref=f4e9]:
+      - text: Contraseña
+      - textbox "Contraseña" [ref=f4e10]
+    - button "Ingresar" [ref=f4e11] [cursor=pointer]
+  - paragraph [ref=f4e12]:
+    - text: ¿No tenés cuenta?
+    - link "Registrate" [ref=f4e13] [cursor=pointer]:
+      - /url: /registro

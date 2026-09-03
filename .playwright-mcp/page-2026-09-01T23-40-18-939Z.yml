@@ -1,0 +1,50 @@
+- generic [ref=f1e4]:
+  - banner [ref=f1e5]:
+    - generic [ref=f1e6]: 🍳 Recetario
+    - navigation [ref=f1e7]:
+      - link "Inicio" [ref=f1e8] [cursor=pointer]:
+        - /url: /
+      - link "Recetas" [ref=f1e9] [cursor=pointer]:
+        - /url: /recetas
+    - generic [ref=f1e10]:
+      - generic [ref=f1e11]: chef@test.com
+      - button "Cerrar sesión" [ref=f1e12] [cursor=pointer]
+  - main [ref=f1e13]:
+    - generic [ref=f1e92]:
+      - heading "Catálogo de recetas" [level=1] [ref=f1e93]
+      - generic [ref=f1e94]:
+        - generic [ref=f1e95]:
+          - text: Nombre
+          - textbox "Nombre" [ref=f1e96]
+        - generic [ref=f1e97]:
+          - text: Categoría
+          - textbox "Categoría" [ref=f1e98]
+        - generic [ref=f1e99]:
+          - text: Tiempo de preparación (min)
+          - spinbutton "Tiempo de preparación (min)" [ref=f1e100]
+        - generic [ref=f1e101]:
+          - text: Porciones
+          - spinbutton "Porciones" [ref=f1e102]
+        - generic [ref=f1e103]:
+          - checkbox "Vegetariana" [ref=f1e104]
+          - text: Vegetariana
+        - button "Crear receta" [ref=f1e106] [cursor=pointer]
+      - table [ref=f1e118]:
+        - rowgroup [ref=f1e119]:
+          - row [ref=f1e120]:
+            - columnheader "Nombre" [ref=f1e121]
+            - columnheader "Categoría" [ref=f1e122]
+            - columnheader "Tiempo (min)" [ref=f1e123]
+            - columnheader "Porciones" [ref=f1e124]
+            - columnheader "Vegetariana" [ref=f1e125]
+            - columnheader "Acciones" [ref=f1e126]
+        - rowgroup [ref=f1e127]:
+          - row [ref=f1e128]:
+            - cell "Sopa de calabaza" [ref=f1e129]
+            - cell "Entradare" [ref=f1e130]
+            - cell "25" [ref=f1e131]
+            - cell "4" [ref=f1e132]
+            - cell "No" [ref=f1e133]
+            - cell [ref=f1e134]:
+              - button "Editar" [ref=f1e135] [cursor=pointer]
+              - button "Eliminar" [ref=f1e136] [cursor=pointer]

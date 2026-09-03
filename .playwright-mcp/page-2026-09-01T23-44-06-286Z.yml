@@ -1,0 +1,41 @@
+- generic [ref=f5e14]:
+  - banner [ref=f5e15]:
+    - generic [ref=f5e16]: 🍳 Recetario
+    - navigation [ref=f5e17]:
+      - link "Inicio" [ref=f5e18] [cursor=pointer]:
+        - /url: /
+      - link "Recetas" [active] [ref=f5e19] [cursor=pointer]:
+        - /url: /recetas
+    - generic [ref=f5e20]:
+      - generic [ref=f5e21]: chef2@test.com
+      - button "Cerrar sesión" [ref=f5e22] [cursor=pointer]
+  - main [ref=f5e23]:
+    - generic [ref=f5e32]:
+      - heading "Catálogo de recetas" [level=1] [ref=f5e33]
+      - generic [ref=f5e34]:
+        - generic [ref=f5e35]:
+          - text: Nombre
+          - textbox "Nombre" [ref=f5e36]
+        - generic [ref=f5e37]:
+          - text: Categoría
+          - textbox "Categoría" [ref=f5e38]
+        - generic [ref=f5e39]:
+          - text: Tiempo de preparación (min)
+          - spinbutton "Tiempo de preparación (min)" [ref=f5e40]
+        - generic [ref=f5e41]:
+          - text: Porciones
+          - spinbutton "Porciones" [ref=f5e42]
+        - generic [ref=f5e43]:
+          - checkbox "Vegetariana" [ref=f5e44]
+          - text: Vegetariana
+        - button "Crear receta" [ref=f5e46] [cursor=pointer]
+      - table [ref=f5e48]:
+        - rowgroup [ref=f5e49]:
+          - row [ref=f5e50]:
+            - columnheader "Nombre" [ref=f5e51]
+            - columnheader "Categoría" [ref=f5e52]
+            - columnheader "Tiempo (min)" [ref=f5e53]
+            - columnheader "Porciones" [ref=f5e54]
+            - columnheader "Vegetariana" [ref=f5e55]
+            - columnheader "Acciones" [ref=f5e56]
+        - rowgroup

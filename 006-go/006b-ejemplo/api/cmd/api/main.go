@@ -125,6 +125,10 @@ func main() {
 	authMiddleware := middleware.AuthMiddleware()
 
 	router := gin.Default()
+	// CORS va antes que cualquier ruta: un cliente en otro origen (la app de
+	// React de la Unidad 7, servida por Vite en localhost:5173) necesita este
+	// header en TODAS las respuestas, incluidas las que fallan con 401/404.
+	router.Use(middleware.CORSMiddleware())
 	libro.RegisterRoutes(router, libroHandler, authMiddleware)
 	usuario.RegisterRoutes(router, usuarioHandler, authMiddleware)
 

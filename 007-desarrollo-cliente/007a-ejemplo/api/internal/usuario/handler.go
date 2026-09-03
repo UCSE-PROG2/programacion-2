@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"biblioteca/api/internal/middleware"
+	"recetario/api/internal/middleware"
 )
 
 // Handler es la única pieza del dominio que ve los DTOs de entrada/salida

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Biblioteca API — Ejemplo Unidad 6 (Go)",
-    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB (Clases 1 y 2), búsqueda con filtros opcionales de Mongo (Clase 4), más registro, login y cambio de contraseña del dominio \"Usuario\" con JWT + bcrypt (Clase 3).\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. Los requests \"07\" a \"10\" prueban /libros/buscar con distintos filtros (título aproximado, rango de año, rango de fecha de ingreso, y varios combinados) sobre los dos libros creados en \"01\" y \"02\". \"13 - Eliminar libro\" borra el libro de \"01\"; \"14 - Buscar libro eliminado (404)\" confirma que ya no existe. Los requests \"15\" a \"25\" son independientes de los de \"libro\" pero también deben correrse en orden: \"19 - Login\" guarda el token en `usuario_token`, que reutilizan los requests de cambio de contraseña (\"20\" a \"23\").\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
+    "description": "Colección de prueba para la API de ejemplo de la Biblioteca (Unidad 6 — Go). CRUD completo del dominio \"Libro\" con Gin + MongoDB (Clases 1 y 2), búsqueda con filtros opcionales de Mongo (Clase 4), más registro, login y cambio de contraseña del dominio \"Usuario\" con JWT + bcrypt (Clase 3).\n\nOrden sugerido: correr \"01 - Crear libro\" primero (guarda el id creado en la variable de colección `libro_id`), y de ahí para abajo en orden. Los requests \"07\" a \"10\" prueban /libros/buscar con distintos filtros (título aproximado, rango de año, rango de fecha de ingreso, y varios combinados) sobre los dos libros creados en \"01\" y \"02\". \"13 - Eliminar libro\" borra el libro de \"01\"; \"14 - Buscar libro eliminado (404)\" confirma que ya no existe. Los requests \"15\" a \"26\" son independientes de los de \"libro\" pero también deben correrse en orden: \"19 - Login\" guarda el token en `usuario_token`, que también reutiliza \"20 - Obtener perfil del usuario autenticado\"; el cambio de contraseña (\"21\" a \"24\") reutiliza el mismo token.\n\nAntes de correr, levantar la API con `docker compose up --build` desde la carpeta `006b-ejemplo/` (ver el README de esta carpeta).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -539,7 +539,30 @@
       }
     },
     {
-      "name": "20 - Cambiar password sin token (401 esperado)",
+      "name": "20 - Obtener perfil del usuario autenticado (GET /usuarios/me)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('devuelve el email del usuario logueado', () => pm.expect(body.email).to.eql(pm.collectionVariables.get('usuario_email')));",
+              "pm.test('no devuelve el hash de la contraseña', () => pm.expect(body).to.not.have.property('passwordHash'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{usuario_token}}" }],
+        "url": { "raw": "{{base_url}}/usuarios/me", "host": ["{{base_url}}"], "path": ["usuarios", "me"] },
+        "description": "GET /usuarios/me — devuelve el UsuarioDTO (id, email) del usuario dueño del token, sin exponer el hash de la contraseña. El ID sale del claim \"sub\" del JWT, validado por AuthMiddleware; no hay forma de pedir el perfil de otra cuenta."
+      }
+    },
+    {
+      "name": "21 - Cambiar password sin token (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -564,7 +587,7 @@
       }
     },
     {
-      "name": "21 - Cambiar password con token inválido (401 esperado)",
+      "name": "22 - Cambiar password con token inválido (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -592,7 +615,7 @@
       }
     },
     {
-      "name": "22 - Cambiar password con contraseña actual incorrecta (401 esperado)",
+      "name": "23 - Cambiar password con contraseña actual incorrecta (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -620,7 +643,7 @@
       }
     },
     {
-      "name": "23 - Cambiar password",
+      "name": "24 - Cambiar password",
       "event": [
         {
           "listen": "test",
@@ -645,7 +668,7 @@
       }
     },
     {
-      "name": "24 - Login con la contraseña vieja (401 esperado)",
+      "name": "25 - Login con la contraseña vieja (401 esperado)",
       "event": [
         {
           "listen": "test",
@@ -669,7 +692,7 @@
       }
     },
     {
-      "name": "25 - Login con la contraseña nueva",
+      "name": "26 - Login con la contraseña nueva",
       "event": [
         {
           "listen": "test",

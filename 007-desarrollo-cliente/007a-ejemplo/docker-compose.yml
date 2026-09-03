@@ -1,0 +1,33 @@
+# Levanta el stack completo: MongoDB + la API del Recetario.
+#
+#   docker compose up --build   # construye la imagen de la API y levanta todo
+#   docker compose down         # para y borra los contenedores (el volumen queda)
+#   docker compose down -v      # además borra el volumen (pierde los datos)
+#
+# Si el docker-compose de 006-go/006b-ejemplo ya está corriendo, bajalo antes
+# (docker compose down desde esa carpeta) — ambos usan los mismos puertos
+# (8080 y 27017) y no pueden correr al mismo tiempo.
+#
+# Ver api/cmd/api/main.go para el detalle completo de cómo se arma la imagen
+# de Docker y las distintas formas de correr esto.
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - datos-recetario:/data/db
+
+  api:
+    build: ./api
+    ports:
+      - "8080:8080"
+    environment:
+      # Dentro de la red de compose, "mongo" resuelve como hostname del
+      # servicio de arriba — no se usa "localhost".
+      MONGO_URI: "mongodb://mongo:27017"
+    depends_on:
+      - mongo
+
+volumes:
+  datos-recetario:

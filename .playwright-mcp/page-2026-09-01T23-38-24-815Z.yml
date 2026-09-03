@@ -1,0 +1,41 @@
+- generic [ref=f1e4]:
+  - banner [ref=f1e5]:
+    - generic [ref=f1e6]: 🍳 Recetario
+    - navigation [ref=f1e7]:
+      - link "Inicio" [ref=f1e8] [cursor=pointer]:
+        - /url: /
+      - link "Recetas" [ref=f1e9] [cursor=pointer]:
+        - /url: /recetas
+    - generic [ref=f1e10]:
+      - generic [ref=f1e11]: chef@test.com
+      - button "Cerrar sesión" [ref=f1e12] [cursor=pointer]
+  - main [ref=f1e13]:
+    - generic [ref=f1e14]:
+      - heading "Catálogo de recetas" [level=1] [ref=f1e15]
+      - generic [ref=f1e16]:
+        - generic [ref=f1e17]:
+          - text: Nombre
+          - textbox "Nombre" [ref=f1e18]: Tarta de manzana
+        - generic [ref=f1e19]:
+          - text: Categoría
+          - textbox "Categoría" [ref=f1e20]: Postre
+        - generic [ref=f1e21]:
+          - text: Tiempo de preparación (min)
+          - spinbutton "Tiempo de preparación (min)" [ref=f1e22]: "60"
+        - generic [ref=f1e23]:
+          - text: Porciones
+          - spinbutton "Porciones" [active] [ref=f1e24]: "8"
+        - generic [ref=f1e25]:
+          - checkbox "Vegetariana" [ref=f1e26]
+          - text: Vegetariana
+        - button "Crear receta" [ref=f1e28] [cursor=pointer]
+      - table [ref=f1e30]:
+        - rowgroup [ref=f1e31]:
+          - row [ref=f1e32]:
+            - columnheader "Nombre" [ref=f1e33]
+            - columnheader "Categoría" [ref=f1e34]
+            - columnheader "Tiempo (min)" [ref=f1e35]
+            - columnheader "Porciones" [ref=f1e36]
+            - columnheader "Vegetariana" [ref=f1e37]
+            - columnheader "Acciones" [ref=f1e38]
+        - rowgroup

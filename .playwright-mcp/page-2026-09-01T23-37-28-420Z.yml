@@ -1,0 +1,14 @@
+- generic [ref=e4]:
+  - heading "Crear cuenta" [level=1] [ref=e5]
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - text: Email
+      - textbox "Email" [ref=e8]
+    - generic [ref=e9]:
+      - text: Contraseña (mínimo 8 caracteres)
+      - textbox "Contraseña (mínimo 8 caracteres)" [ref=e10]
+    - button "Crear cuenta" [ref=e11] [cursor=pointer]
+  - paragraph [ref=e12]:
+    - text: ¿Ya tenés cuenta?
+    - link "Iniciá sesión" [ref=e13] [cursor=pointer]:
+      - /url: /login

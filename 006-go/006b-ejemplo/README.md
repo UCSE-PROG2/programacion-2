@@ -10,7 +10,8 @@ Docker y `internal/libro/` para el código.
 2. [Dependencias del proyecto (`go get`)](#dependencias-del-proyecto-go-get)
 3. [Cómo correrlo](#cómo-correrlo)
 4. [Endpoints](#endpoints)
-5. [Postman](#postman)
+5. [CORS (para consumir esta API desde un cliente web)](#cors-para-consumir-esta-api-desde-un-cliente-web)
+6. [Postman](#postman)
 
 ---
 
@@ -133,6 +134,7 @@ quedó un `go run` anterior colgado), matar el proceso que lo tiene:
 | `DELETE` | `/libros/:id` | — |
 | `POST` | `/usuarios/registro` | `{"email","password"}` |
 | `POST` | `/usuarios/login` | `{"email","password"}` |
+| `GET` | `/usuarios/me` (requiere `Authorization: Bearer <token>`) | — |
 | `PUT` | `/usuarios/password` (requiere `Authorization: Bearer <token>`) | `{"passwordActual","passwordNueva"}` |
 
 ```bash
@@ -191,6 +193,10 @@ curl -X POST http://localhost:8080/usuarios/login \
   -H "Content-Type: application/json" \
   -d '{"email":"ana@test.com","password":"clave1234"}'
 
+# Perfil del usuario autenticado (requiere el token del login)
+curl http://localhost:8080/usuarios/me \
+  -H "Authorization: Bearer <token>"
+
 # Cambio de contraseña autenticado (requiere el token del login)
 curl -X PUT http://localhost:8080/usuarios/password \
   -H "Content-Type: application/json" \
@@ -198,10 +204,24 @@ curl -X PUT http://localhost:8080/usuarios/password \
   -d '{"passwordActual":"clave1234","passwordNueva":"otraClave5678"}'
 ```
 
+### CORS (para consumir esta API desde un cliente web)
+
+`internal/middleware/cors_middleware.go` agrega el header
+`Access-Control-Allow-Origin` a toda respuesta y responde `204` a los
+preflight `OPTIONS`, registrado globalmente en `main.go`
+(`router.Use(middleware.CORSMiddleware())`). Sin esto, un navegador bloquea
+las respuestas cuando el request sale de un origen distinto al de la API —
+por ejemplo, la app de React de la Unidad 7 corriendo con Vite en
+`http://localhost:5173` — antes de que el JS de la página llegue a verlas.
+`curl` y Postman no aplican esta política (es un mecanismo del navegador), así
+que los ejemplos de este README funcionan con o sin este middleware; hace
+falta específicamente para el ejemplo de la Unidad 7 (ver
+`007-desarrollo-cliente/007a-ejemplo`).
+
 ## Postman
 
-`postman/Biblioteca-API.postman_collection.json` — 25 requests en orden
+`postman/Biblioteca-API.postman_collection.json` — 26 requests en orden
 (crear → listar → buscar con cada filtro opcional por separado y combinados →
-actualizar → eliminar → 404 → registro/login/cambio de password de usuario),
-con tests automáticos y `base_url` precargada en `http://localhost:8080`.
-Import → correr con la API arriba.
+actualizar → eliminar → 404 → registro/login/perfil/cambio de password de
+usuario), con tests automáticos y `base_url` precargada en
+`http://localhost:8080`. Import → correr con la API arriba.
