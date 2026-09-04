@@ -42,3 +42,4 @@ Ver `007a-ejemplo/README.md` para instrucciones de instalación y ejecución. Re
 - [reactrouter.com](https://reactrouter.com/) — documentación de React Router
 - [MDN — Using Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch) — referencia de la Fetch API
 - [MDN — CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) — referencia completa de CORS
+- [Curso React](https://www.youtube.com/watch?v=yIr_1CasXkM)

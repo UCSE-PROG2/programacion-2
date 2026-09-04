@@ -180,7 +180,7 @@ export function RecetasPage() {
 
   return (
     <div className="panel">
-      <h1>Catálogo de recetas</h1>
+      <h1>Productos</h1>
 
       {/* Formulario: el mismo bloque de JSX sirve para crear y para editar
           — el título del botón y si aparece "Cancelar" cambian según
