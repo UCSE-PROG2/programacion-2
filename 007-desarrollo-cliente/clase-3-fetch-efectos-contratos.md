@@ -1,8 +1,8 @@
 # Clase 3 — Efectos, `fetch` y contratos tipados con el backend
 
-## `useEffect`: código que corre fuera del render
+## `useEffect`: cuando hay que hacer algo que no es "dibujar la pantalla"
 
-Todo lo visto hasta acá (JSX, `useState`) describe **qué renderizar**. Pedirle datos a una API es distinto: es un **efecto secundario** (*side effect*) — algo que pasa por fuera de "calcular la UI a partir del estado" y que además toma tiempo (la red). `useEffect` es el hook para ese caso.
+Todo lo que vimos hasta ahora (JSX, `useState`) sirve para una sola cosa: decidir qué se ve en pantalla según el estado actual. Pedirle datos a una API es otra cosa muy distinta: es algo que pasa "por afuera" de la pantalla, tarda un tiempo (porque viaja por internet) y no depende solo de lo que el componente tiene guardado. A este tipo de tareas se las llama **efectos** (el nombre técnico completo es "efecto secundario", pero no hace falta usarlo con los alumnos). `useEffect` es la herramienta de React para decir "esto ejecutalo aparte, no como parte del dibujado normal".
 
 ```tsx
 import { useEffect, useState } from "react";
@@ -19,19 +19,26 @@ function Reloj() {
 }
 ```
 
-| Array de dependencias | Cuándo corre el efecto |
+| Array de dependencias | Cuándo se ejecuta |
 |---|---|
-| Sin array (`useEffect(fn)`) | Después de **cada** render — casi nunca es lo que se quiere |
-| `[]` | Una sola vez, al montar el componente (el caso típico para pedir datos iniciales) |
-| `[valor]` | Cada vez que `valor` cambia entre un render y el siguiente |
+| No poner nada (`useEffect(fn)`) | Después de **cada** vez que se redibuja la pantalla — casi nunca es lo que se quiere |
+| `[]` (array vacío) | Una sola vez, apenas el componente aparece en pantalla — el caso típico para pedir los datos iniciales |
+| `[valor]` | Cada vez que ese valor cambia de un dibujado al siguiente |
 
-> **Concepto clave — cleanup**: la función que devuelve `useEffect` (opcional) corre antes de que el efecto se vuelva a disparar, y al desmontar el componente. Es donde se cancelan timers, subscripciones, o (más adelante, con `fetch`) requests en vuelo — sin esto, un componente que ya no está en pantalla puede intentar `setState` sobre datos que ya no importan, y React tira un warning.
+> **Para entender — la "limpieza"**: la función que `useEffect` puede devolver (es opcional) es como apagar la luz al salir de una habitación: se ejecuta justo antes de que el efecto se vuelva a disparar, y también cuando el componente desaparece de la pantalla. Ahí es donde se cancelan timers, conexiones, o pedidos de red que quedaron "en el aire". Si no se hace esto, puede pasar que un componente que ya no está en pantalla intente actualizar datos que a esta altura ya no le importan a nadie, y React avisa con un mensaje de advertencia.
 
-> **Cuidado — loop infinito**: si el efecto llama a una función que actualiza estado (`setState`) y se omite el array de dependencias (o se pasa un array vacío mal puesto, o un valor que cambia en cada render, como un objeto u array creado inline), React puede volver a ejecutar el efecto en cada render que ese `setState` provoca, entrando en un ciclo infinito de renders. Por eso "pedir datos al montar" siempre usa `[]`: le dice a React "este efecto no depende de nada que cambie, corré una sola vez".
+> **Cuidado — quedarse dando vueltas sin parar**: si el efecto actualiza el estado del componente, y nos olvidamos de poner el array de dependencias (o lo ponemos mal, por ejemplo con un valor que cambia en cada dibujado), puede pasar esto: el efecto actualiza el estado → eso hace que el componente se vuelva a dibujar → volver a dibujar dispara el efecto otra vez → y así sin parar, en un ciclo infinito. Por eso, la regla para "pedir datos apenas se abre la pantalla" es siempre usar `[]`: le decimos a React "esto no depende de nada que cambie, ejecutalo una sola vez y listo".
 
 ## Pidiendo datos a una API con `fetch`
 
-El navegador trae `fetch` nativo — no hace falta instalar nada para hacer requests HTTP (Axios es una alternativa popular con más funcionalidades, pero no es necesaria para lo que cubre esta unidad).
+El navegador ya viene con una función para pedir datos a otra dirección de internet: `fetch`. No hace falta instalar nada para usarla (existe una alternativa muy usada, Axios, con más funciones extra, pero no la necesitamos para lo que vemos acá).
+
+### Antes del ejemplo: qué son `async` y `await`
+
+Pedirle algo a un servidor no da el resultado al instante, como sumar dos números — tarda un tiempo, porque viaja por internet. Es más parecido a pedir comida por delivery: hacés el pedido y no te quedás parado esperando sin hacer nada, seguís con lo tuyo, y cuando llega, la recibís. `async` y `await` son las dos palabras que usa JavaScript/TypeScript para escribir ese tipo de espera de forma que el código se lea de arriba hacia abajo, como si fuera secuencial, en vez de quedar todo enredado:
+
+- `async` se le pone adelante a una función para avisar "esta función va a tardar en algún momento, y eso está contemplado".
+- `await` se usa **adentro** de una función `async`, justo delante de algo que tarda (como un `fetch`). Pausa nada más que **esa función puntual** hasta que el resultado está listo — el resto de la página sigue funcionando con normalidad mientras tanto — y cuando el resultado llega, la función sigue como si nada, con ese valor ya disponible.
 
 ```tsx
 interface Receta {
@@ -73,17 +80,17 @@ function ListaRecetas() {
 }
 ```
 
-> **Concepto clave — `Promise`, `async`/`await`**: una operación de red no tiene el resultado disponible al instante. En JS/TS eso se modela con una `Promise`: un valor que representa "un resultado que va a estar disponible más adelante", sin bloquear el hilo del navegador mientras tanto. `fetch(...)` devuelve una `Promise<Response>`; `respuesta.json()` devuelve otra `Promise`. Una función marcada `async` puede usar `await` adentro: `await` pausa **esa función** (no el navegador entero, que sigue respondiendo a otros eventos) hasta que la Promise se resuelve, y da como resultado el valor ya resuelto — es la forma de leer código asíncrono como si fuera secuencial. No hay un equivalente directo en Go (que resuelve esto con goroutines y channels, Unidad 6) ni en el Java visto hasta ahora.
+> **Para entender — qué es una `Promise`**: el "comprobante de que en algún momento vas a tener el resultado" (siguiendo la analogía del delivery de más arriba) es lo que en JavaScript se llama `Promise`. `fetch(...)` en realidad devuelve una de estas — no la receta directamente, sino la promesa de que en algún momento va a estar. `await` es lo que permite "canjear" esa promesa por el valor real, sin bloquear nada más mientras se espera.
 
-> **Cuidado — por qué `cargar` es una función aparte**: la función que recibe `useEffect` no puede ser `async` directamente (`useEffect(async () => {...}, [])` es un error de tipos) porque el valor que devuelve un efecto lo usa React para el cleanup (ver más arriba) — y una función `async` siempre devuelve una `Promise`, nunca `undefined` ni una función de limpieza. Por eso el patrón estándar es declarar una función `async` aparte adentro del efecto (acá, `cargar`) y llamarla sin `await`, dejando que el efecto en sí siga siendo síncrono.
+> **Cuidado — por qué armamos una función aparte llamada `cargar`**: hay una regla de sintaxis que conviene aprender de memoria más que pelearse por entenderla del todo: la función que recibe `useEffect` no puede marcarse `async` directamente. Por eso el patrón que se usa siempre es: adentro del efecto, se define una función `async` con otro nombre (acá, `cargar`), y se la llama ahí mismo. Es una receta fija que se repite igual en (casi) todos los componentes que piden datos.
 
-> **Cuidado — el tipo de `e` en el `catch`**: TypeScript tipa la variable de un `catch` como `unknown` (podría ser cualquier cosa — en JS se puede hacer `throw "un string"`), no como `Error`. Por eso no alcanza con `e.message`: hay que reducir ese tipo a algo más específico primero con `e instanceof Error` (esto se llama **type narrowing**, "angostar" el tipo) — TypeScript recién ahí deja acceder a `.message`, porque dentro del `if` ya sabe que `e` es un `Error`.
+> **Cuidado — por qué no alcanza con `e.message` en el `catch`**: en JavaScript se puede "lanzar" cualquier cosa como error, no necesariamente algo del tipo `Error` (hasta se puede lanzar un simple texto). Por eso TypeScript no sabe de antemano qué tipo de cosa es `e`, y no deja usar `.message` directamente. Hay que primero preguntar "¿esto que agarré es realmente un `Error`?" con `e instanceof Error` — recién ahí adentro, TypeScript deja leer el mensaje con tranquilidad porque ya sabe con qué está tratando.
 
-> **Diferencia con `error`, `err` de Go (Unidad 6)**: `fetch` **no** rechaza la promesa por un `404` o `500` — solo lo hace ante un fallo de red real (sin conexión, DNS, CORS bloqueado). Por eso hay que chequear `respuesta.ok` (equivalente al `if err != nil` de Go, pero acá el "error HTTP" no es un `Error` de JS hasta que se lanza explícitamente).
+> **Diferencia con lo que vieron en Go (Unidad 6)**: `fetch` **no** considera que algo salió mal cuando el servidor responde con un `404` o un `500` — para `fetch`, eso es una respuesta como cualquier otra. Solo se considera un fallo real cuando hay un problema de conexión (no hay internet, el servidor no existe, etc.). Por eso siempre hay que revisar a mano si `respuesta.ok` da verdadero — es el equivalente a chequear `if err != nil` en Go, pero acá "hubo un error HTTP" no cuenta como un error de JavaScript hasta que nosotros decidimos lanzarlo con `throw`.
 
 ## Tipando los contratos del backend (DTOs → `interface`)
 
-La Unidad 6 separó explícitamente el modelo interno (`Usuario`, con el hash de la contraseña) del DTO que viaja por HTTP (`UsuarioDTO`, sin el hash — mismo patrón acá, ver `007a-ejemplo/api/internal/usuario/dto.go`). Del lado del cliente, cada uno de esos DTOs se refleja con una `interface` de TypeScript — el mismo campo, el mismo nombre de JSON, ningún campo de más:
+En la Unidad 6 vimos que el servidor separa dos cosas: el usuario "completo" que se guarda internamente (con la contraseña encriptada, por ejemplo) y una versión "recortada" de esos mismos datos, que es la única que viaja por internet, sin nada sensible (eso es un DTO — mismo patrón acá, se puede ver en `007a-ejemplo/api/internal/usuario/dto.go`). Del lado de React pasa algo parecido: por cada una de esas "versiones recortadas" que viajan por la red, escribimos una `interface` de TypeScript que describe exactamente esos mismos campos, con el mismo nombre — ni uno de más, ni uno de menos:
 
 ```ts
 // Contratos de 007a-ejemplo/api — reflejan exactamente los DTOs de Go
@@ -122,11 +129,11 @@ async function login(dto: LoginDTO): Promise<LoginResponse> {
 }
 ```
 
-> **Concepto clave**: TypeScript **no valida en runtime** que la respuesta de `fetch` realmente tenga la forma de `LoginResponse` — `respuesta.json()` devuelve `any`, y el `: Promise<LoginResponse>` es una promesa del programador al compilador, no una garantía verificada contra el JSON real. Si el backend cambia el contrato sin avisar, el error aparece en runtime (un campo `undefined`), no en compilación. Librerías como `zod` resuelven esto con validación real en runtime — queda fuera del alcance de esta unidad introductoria, pero vale saber que el chequeo de tipos de TS termina en la frontera de red.
+> **Para remarcar en clase — esto es una promesa, no una garantía**: TypeScript **no revisa, mientras el programa está corriendo, que lo que llegó del servidor realmente tenga la forma que le prometimos** (`respuesta.json()` en realidad devuelve "puede ser cualquier cosa", y el `: Promise<LoginResponse>` es solo lo que nosotros, como programadores, le prometemos al compilador que va a venir). Si el backend cambia algo sin avisar, TypeScript no lo va a detectar al compilar: el problema recién va a aparecer cuando el programa ya esté corriendo, como un valor que de golpe es "indefinido". Existen herramientas (como `zod`) que sí revisan esto mientras el programa corre, pero quedan fuera de lo que vemos en esta materia — alcanza con que los alumnos entiendan que la revisión de tipos de TypeScript "se corta" justo en la frontera con la red.
 
 ## Variables de entorno con Vite
 
-Un valor como la URL del backend no debería quedar hardcodeado — cambia entre desarrollo y producción. Vite expone variables de entorno con el prefijo obligatorio `VITE_`:
+Un dato como la dirección del backend no conviene dejarlo escrito fijo en el código, porque cambia según dónde esté corriendo la aplicación (no es la misma dirección en la computadora de desarrollo que cuando la app ya está publicada). Para esto existen las variables de entorno: valores que se definen afuera del código, en un archivo aparte. Vite (la herramienta que arma el proyecto de React) exige que esas variables empiecen con el prefijo `VITE_`:
 
 ```bash
 # .env
@@ -137,15 +144,15 @@ VITE_API_URL=http://localhost:8080
 const API_URL = import.meta.env.VITE_API_URL;
 ```
 
-> **Por qué el prefijo `VITE_` es obligatorio**: el **bundle** es el archivo (o los pocos archivos) `.js` finales que Vite arma en `dist/` juntando todo el código de la app — es lo que termina sirviéndose al navegador (ver Clase 1 — `npm run build`). Todo lo que termina ahí adentro es código que corre en el navegador de un desconocido — **público**, sin excepción. Vite solo expone al cliente las variables que empiezan con `VITE_`, precisamente para que no sea trivial filtrar por accidente una variable de entorno sensible (una clave de API privada, por ejemplo) que sí puede vivir sin ese prefijo del lado del build tool pero nunca debería llegar al navegador.
+> **Por qué el prefijo `VITE_` es obligatorio**: cuando la aplicación está lista para publicarse, Vite junta todo el código en unos pocos archivos finales (esto se llama el **build**, ver Clase 1 — `npm run build`). Esos archivos son los que se le mandan al navegador de cualquier persona que entre a la página — es decir, es código que **cualquiera puede ver y leer**, sin excepción, con las herramientas del navegador. Vite solo mete adentro de esos archivos finales las variables que arrancan con `VITE_`, justamente para que sea difícil filtrar por error algo que no debería ser público (una clave secreta de una API, por ejemplo) — esas otras variables sin el prefijo pueden existir del lado de la herramienta de build, pero nunca llegan al navegador.
 
 ## CORS: por qué el navegador bloquea la llamada
 
-Al levantar el cliente de React (`http://localhost:5173`, el puerto por defecto de Vite) y llamarlo contra la API de Go (`http://localhost:8080`), el navegador ve dos **orígenes** distintos (protocolo + dominio + puerto) y aplica la *same-origin policy*: por defecto, JavaScript corriendo en el origen `5173` no puede leer una respuesta que vino del origen `8080`, aunque el request efectivamente haya llegado al servidor.
+Cuando levantamos el cliente de React (que corre en `http://localhost:5173`, el puerto que usa Vite por defecto) y desde ahí llamamos a la API de Go (que corre en `http://localhost:8080`), para el navegador esas son **dos direcciones distintas**, aunque las dos digan "localhost" — cambia el número de puerto al final. Por seguridad, el navegador tiene una regla que dice: "el código JavaScript de una dirección no puede leer la respuesta que vino de otra dirección diferente" — aunque el pedido haya llegado bien al servidor y la respuesta haya vuelto bien, el navegador se la esconde al código.
 
-**CORS** (*Cross-Origin Resource Sharing*) es el mecanismo por el cual el **servidor** le dice al navegador "este otro origen sí puede leer mi respuesta", vía el header `Access-Control-Allow-Origin`. Es una decisión del backend, no del cliente — por eso `007a-ejemplo/api/internal/middleware/cors_middleware.go` agrega ese header a toda respuesta de esta API.
+**CORS** es, básicamente, el permiso que dan los servidores para saltear esa regla: es el mecanismo por el cual el **servidor** le avisa al navegador "esta otra dirección sí tiene permiso para leer lo que yo le mando". Ese permiso lo da el servidor agregando una información extra a su respuesta (el header `Access-Control-Allow-Origin`). Es una decisión que toma el backend, no algo que el cliente pueda arreglar por su cuenta — por eso en `007a-ejemplo/api/internal/middleware/cors_middleware.go` se agrega ese permiso a todas las respuestas de esta API.
 
-> **Concepto clave — preflight**: para requests "no simples" (con un header como `Authorization`, o `Content-Type: application/json`), el navegador manda automáticamente un `OPTIONS` **antes** del request real, para confirmarle al servidor qué orígenes/métodos/headers están permitidos — sin que el código JS lo pida explícitamente, ni se entere de que pasó. Si el servidor no responde ese `OPTIONS` con los headers correctos, `fetch` nunca llega a mandar el request real. Por eso el middleware corta la respuesta con un `204` apenas ve `OPTIONS` (ver el código): es exclusivamente para contestar ese preflight.
+> **Para entender — el "pedido de prueba" antes del pedido real (preflight)**: cuando el pedido no es tan simple (por ejemplo, si lleva un token de autenticación, o avisa que manda datos en formato JSON), el navegador, por su cuenta y sin que nuestro código se lo pida, manda primero un pedido de prueba (`OPTIONS`) preguntándole al servidor "¿tengo permiso para hacer esto?". Si el servidor no contesta bien ese pedido de prueba, el pedido real ni siquiera llega a mandarse — el código ni se entera de que esto pasó. Por eso el middleware contesta enseguida con un "todo bien" (`204`) apenas detecta un `OPTIONS` (ver el código): su único trabajo es responder ese pedido de prueba.
 
 ```mermaid
 sequenceDiagram
@@ -158,5 +165,5 @@ sequenceDiagram
     Note over N: Con el header presente, el navegador<br/>entrega la respuesta al JS de la página
 ```
 
-`curl` y Postman (Unidad 6) nunca tropiezan con esto — CORS es una política que aplica **el navegador**, no una restricción del servidor en sí; por eso los ejemplos con `curl` del README de la Unidad 6 siempre funcionaron sin este middleware, y solo hizo falta agregarlo al conectar un cliente real desde el navegador.
+Esto explica algo que puede resultar confuso: `curl` y Postman (que usaron en la Unidad 6) nunca tuvieron este problema, porque CORS es una regla que aplica específicamente **el navegador** — no es una restricción real del servidor ni del protocolo HTTP. Por eso los ejemplos con `curl` de la Unidad 6 siempre funcionaron sin este middleware, y recién hizo falta agregarlo cuando conectamos un cliente real desde el navegador.
 
