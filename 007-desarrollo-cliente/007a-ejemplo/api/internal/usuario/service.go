@@ -22,6 +22,13 @@ var (
 // Service contiene la lógica de negocio del dominio "usuario". El campo
 // "repo" es la interfaz Repository, no *MongoRepository (ver Clase 1 —
 // "satisfacción implícita").
+//
+// Service es la única pieza del dominio que ve tanto los DTOs (RegistroDTO,
+// LoginDTO, CambiarPasswordDTO, UsuarioDTO) como Usuario, el modelo de
+// Mongo: arma el Usuario a partir del DTO que ya validó el Handler antes de
+// llamar al Repository, y convierte el Usuario que devuelve el Repository de
+// vuelta a UsuarioDTO con u.ToDTO() antes de retornar. El Handler nunca ve
+// Usuario, y el Repository nunca ve un DTO.
 type Service struct {
 	repo Repository
 }
@@ -34,21 +41,25 @@ func NewService(repo Repository) *Service {
 // chequea el email duplicado (una consulta liviana) ANTES de hashear la
 // contraseña (bcrypt es deliberadamente lento) — no tiene sentido pagar ese
 // costo si la request ya va a fallar por otra razón.
-func (s *Service) Registrar(ctx context.Context, dto RegistroDTO) (Usuario, error) {
+func (s *Service) Registrar(ctx context.Context, dto RegistroDTO) (UsuarioDTO, error) {
 	_, err := s.repo.FindByEmail(ctx, dto.Email)
 	if err == nil {
 		// FindByEmail sin error significa que SÍ encontró un usuario con
 		// ese email — es el caso de conflicto.
-		return Usuario{}, ErrEmailYaRegistrado
+		return UsuarioDTO{}, ErrEmailYaRegistrado
 	}
 
 	hash, err := auth.HashPassword(dto.Password)
 	if err != nil {
-		return Usuario{}, err
+		return UsuarioDTO{}, err
 	}
 
 	nuevo := Usuario{Email: dto.Email, PasswordHash: hash}
-	return s.repo.Create(ctx, nuevo)
+	creado, err := s.repo.Create(ctx, nuevo)
+	if err != nil {
+		return UsuarioDTO{}, err
+	}
+	return creado.ToDTO(), nil
 }
 
 // Login verifica email + contraseña y, si son correctos, emite un JWT nuevo.
@@ -73,8 +84,12 @@ func (s *Service) Login(ctx context.Context, dto LoginDTO) (string, error) {
 // ya validado por AuthMiddleware (ver internal/middleware), nunca de un
 // parámetro de ruta — así una cuenta solo puede pedir SU PROPIO perfil, igual
 // que en CambiarPassword.
-func (s *Service) ObtenerPerfil(ctx context.Context, usuarioID string) (Usuario, error) {
-	return s.repo.FindByID(ctx, usuarioID)
+func (s *Service) ObtenerPerfil(ctx context.Context, usuarioID string) (UsuarioDTO, error) {
+	u, err := s.repo.FindByID(ctx, usuarioID)
+	if err != nil {
+		return UsuarioDTO{}, err
+	}
+	return u.ToDTO(), nil
 }
 
 // CambiarPassword implementa el "reset pass" autenticado: el usuario ya

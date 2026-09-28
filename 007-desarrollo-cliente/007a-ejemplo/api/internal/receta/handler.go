@@ -8,10 +8,10 @@ import (
 	"recetario/api/internal/middleware"
 )
 
-// Handler es la ÚNICA pieza del dominio que ve RecetaDTO: convierte a Receta
-// apenas recibe un request (dto.ToModel()) y convierte de vuelta apenas arma
-// la response (r.ToDTO()). Service y Repository nunca ven RecetaDTO — para
-// ellos el único tipo que existe es Receta.
+// Handler solo habla en RecetaDTO: parsea el body a RecetaDTO con
+// c.ShouldBindJSON y responde con lo que le devuelve el Service, que también
+// es siempre RecetaDTO. La conversión a/desde Receta (el modelo de Mongo)
+// vive en el Service (ver service.go) — el Handler nunca ve una Receta.
 type Handler struct {
 	service *Service
 }
@@ -22,15 +22,10 @@ func NewHandler(service *Service) *Handler {
 
 // List responde GET /recetas — devuelve todas las recetas.
 func (h *Handler) List(c *gin.Context) {
-	recetas, err := h.service.ListarTodas(c.Request.Context())
+	dtos, err := h.service.ListarTodas(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	dtos := make([]RecetaDTO, 0, len(recetas))
-	for _, r := range recetas {
-		dtos = append(dtos, r.ToDTO())
 	}
 	c.JSON(http.StatusOK, dtos)
 }
@@ -39,12 +34,12 @@ func (h *Handler) List(c *gin.Context) {
 func (h *Handler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 
-	r, err := h.service.BuscarPorID(c.Request.Context(), id)
+	dto, err := h.service.BuscarPorID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, r.ToDTO())
+	c.JSON(http.StatusOK, dto)
 }
 
 // Create responde POST /recetas. c.ShouldBindJSON parsea el body y valida
@@ -65,21 +60,15 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	r, err := dto.ToModel()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
 	// usuarioCtx.UsuarioID es quien queda registrado como creador — nunca un
 	// campo del body, que el cliente podría manipular para crear una receta
 	// "a nombre de" otra persona.
-	creada, err := h.service.Crear(c.Request.Context(), r, usuarioCtx.UsuarioID)
+	creada, err := h.service.Crear(c.Request.Context(), dto, usuarioCtx.UsuarioID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, creada.ToDTO())
+	c.JSON(http.StatusCreated, creada)
 }
 
 // Update responde PUT /recetas/:id. Mismo criterio que Create: el usuario
@@ -99,18 +88,12 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	r, err := dto.ToModel()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	actualizada, err := h.service.Actualizar(c.Request.Context(), id, r, usuarioCtx.UsuarioID)
+	actualizada, err := h.service.Actualizar(c.Request.Context(), id, dto, usuarioCtx.UsuarioID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, actualizada.ToDTO())
+	c.JSON(http.StatusOK, actualizada)
 }
 
 // Delete responde DELETE /recetas/:id.

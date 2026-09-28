@@ -9,9 +9,11 @@ import (
 	"recetario/api/internal/middleware"
 )
 
-// Handler es la única pieza del dominio que ve los DTOs de entrada/salida
-// (RegistroDTO, LoginDTO, CambiarPasswordDTO, UsuarioDTO). Service nunca los
-// ve — para él el único tipo que existe es Usuario (ver Clase 2).
+// Handler solo habla en DTOs (RegistroDTO, LoginDTO, CambiarPasswordDTO,
+// UsuarioDTO): parsea el body con c.ShouldBindJSON y responde con lo que le
+// devuelve el Service, que también es siempre un DTO. La conversión a/desde
+// Usuario (el modelo de Mongo) vive en el Service (ver service.go) — el
+// Handler nunca ve un Usuario.
 type Handler struct {
 	service *Service
 }
@@ -42,8 +44,9 @@ func (h *Handler) Registro(c *gin.Context) {
 		return
 	}
 
-	// Paso 3: responder con UsuarioDTO — nunca con el hash de la contraseña.
-	c.JSON(http.StatusCreated, creado.ToDTO())
+	// Paso 3: responder con el UsuarioDTO que ya devolvió el Service — nunca
+	// con el hash de la contraseña.
+	c.JSON(http.StatusCreated, creado)
 }
 
 // Login responde POST /usuarios/login.
@@ -83,7 +86,7 @@ func (h *Handler) Perfil(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, u.ToDTO())
+	c.JSON(http.StatusOK, u)
 }
 
 // CambiarPassword responde PUT /usuarios/password. Esta ruta va DETRÁS de
