@@ -32,3 +32,13 @@ export interface RecetaDTO {
   porciones: number;
   vegetariana: boolean;
 }
+
+// Refleja PaginaRecetasDTO (api/internal/receta/dto.go): respuesta de
+// GET /recetas?pagina=N. "total" es la cantidad de recetas de toda la
+// colección, no solo de esta página.
+export interface PaginaRecetasDTO {
+  items: RecetaDTO[];
+  total: number;
+  pagina: number;
+  tamanioPagina: number;
+}

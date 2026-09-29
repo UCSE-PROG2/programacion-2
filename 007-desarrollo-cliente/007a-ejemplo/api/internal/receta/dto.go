@@ -65,3 +65,14 @@ func (dto RecetaDTO) ToModel() (Receta, error) {
 	r.ID = oid
 	return r, nil
 }
+
+// PaginaRecetasDTO es la respuesta de GET /recetas: una página de recetas más
+// lo necesario para que el cliente renderice la paginación. Total es la
+// cantidad de recetas en TODA la colección (no solo en esta página) — con
+// eso y TamanioPagina el frontend calcula cuántas páginas existen.
+type PaginaRecetasDTO struct {
+	Items         []RecetaDTO `json:"items"`
+	Total         int64       `json:"total"`
+	Pagina        int         `json:"pagina"`
+	TamanioPagina int         `json:"tamanioPagina"`
+}

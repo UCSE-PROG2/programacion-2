@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 // Repository declara el contrato de acceso a datos del dominio "receta",
@@ -13,7 +14,7 @@ import (
 // interfaces en Go). Opera siempre sobre Receta (el modelo de Mongo), nunca
 // sobre el DTO — el repository no tiene por qué saber que existe HTTP.
 type Repository interface {
-	FindAll(ctx context.Context) ([]Receta, error)
+	FindPage(ctx context.Context, pagina, tamanio int) ([]Receta, int64, error)
 	FindByID(ctx context.Context, id string) (Receta, error)
 	Create(ctx context.Context, r Receta) (Receta, error)
 	Update(ctx context.Context, id string, r Receta) (Receta, error)
@@ -36,18 +37,32 @@ func NewMongoRepository(coll *mongo.Collection) *MongoRepository {
 // que MongoRepository cumple la interfaz Repository.
 var _ Repository = (*MongoRepository)(nil)
 
-func (r *MongoRepository) FindAll(ctx context.Context) ([]Receta, error) {
-	cursor, err := r.coll.Find(ctx, bson.M{})
+// FindPage devuelve la página "pagina" (base 1) de "tamanio" recetas, más el
+// total de documentos de la colección. Se ordena por _id para que el orden
+// sea estable entre requests: sin sort, Mongo no garantiza el orden y una
+// receta podría repetirse o saltearse al cambiar de página.
+func (r *MongoRepository) FindPage(ctx context.Context, pagina, tamanio int) ([]Receta, int64, error) {
+	total, err := r.coll.CountDocuments(ctx, bson.M{})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: "_id", Value: 1}}).
+		SetSkip(int64((pagina - 1) * tamanio)).
+		SetLimit(int64(tamanio))
+
+	cursor, err := r.coll.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer cursor.Close(ctx)
 
 	recetas := make([]Receta, 0)
 	if err := cursor.All(ctx, &recetas); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return recetas, nil
+	return recetas, total, nil
 }
 
 func (r *MongoRepository) FindByID(ctx context.Context, id string) (Receta, error) {

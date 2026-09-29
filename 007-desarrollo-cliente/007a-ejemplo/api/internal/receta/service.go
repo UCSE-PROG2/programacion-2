@@ -26,17 +26,27 @@ func NewService(repo Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) ListarTodas(ctx context.Context) ([]RecetaDTO, error) {
-	recetas, err := s.repo.FindAll(ctx)
+// TamanioPagina es fijo: el cliente no puede elegir cuántas filas quiere.
+const TamanioPagina = 10
+
+// ListarPagina devuelve la página "pagina" (base 1) de recetas junto con el
+// total de la colección, convertido a PaginaRecetasDTO.
+func (s *Service) ListarPagina(ctx context.Context, pagina int) (PaginaRecetasDTO, error) {
+	recetas, total, err := s.repo.FindPage(ctx, pagina, TamanioPagina)
 	if err != nil {
-		return nil, err
+		return PaginaRecetasDTO{}, err
 	}
 
 	dtos := make([]RecetaDTO, 0, len(recetas))
 	for _, r := range recetas {
 		dtos = append(dtos, r.ToDTO())
 	}
-	return dtos, nil
+	return PaginaRecetasDTO{
+		Items:         dtos,
+		Total:         total,
+		Pagina:        pagina,
+		TamanioPagina: TamanioPagina,
+	}, nil
 }
 
 func (s *Service) BuscarPorID(ctx context.Context, id string) (RecetaDTO, error) {

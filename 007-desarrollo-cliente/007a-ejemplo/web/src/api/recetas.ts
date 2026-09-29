@@ -1,4 +1,4 @@
-import type { RecetaDTO } from "./types";
+import type { PaginaRecetasDTO, RecetaDTO } from "./types";
 
 // Mismo patrón que api/usuarios.ts (Unidad 7, Clase 3): la URL de la API
 // sale de una variable de entorno con el prefijo VITE_, con un default para
@@ -31,13 +31,17 @@ function headersAutenticados(token: string): HeadersInit {
   };
 }
 
-// listarRecetas: GET /recetas — devuelve todas las recetas visibles para
-// cualquier usuario logueado (no solo las que creó esa cuenta).
-export async function listarRecetas(token: string): Promise<RecetaDTO[]> {
-  const respuesta = await fetch(`${API_URL}/recetas`, {
+// listarRecetas: GET /recetas?pagina=N — devuelve UNA página de recetas
+// (el tamaño lo fija el backend) más el total, visibles para cualquier
+// usuario logueado (no solo las que creó esa cuenta).
+export async function listarRecetas(
+  token: string,
+  pagina: number,
+): Promise<PaginaRecetasDTO> {
+  const respuesta = await fetch(`${API_URL}/recetas?pagina=${pagina}`, {
     headers: headersAutenticados(token),
   });
-  return manejarRespuesta<RecetaDTO[]>(respuesta);
+  return manejarRespuesta<PaginaRecetasDTO>(respuesta);
 }
 
 // crearReceta: POST /recetas. El parámetro es RecetaDTO SIN "id" (Omit<...>)

@@ -44,7 +44,7 @@
 //	  -H "Content-Type: application/json" \
 //	  -d '{"email":"ana@test.com","password":"12345678"}'
 //
-//	curl http://localhost:8080/recetas \
+//	curl "http://localhost:8080/recetas?pagina=1" \
 //	  -H "Authorization: Bearer <token>"
 package main
 

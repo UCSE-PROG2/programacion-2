@@ -188,3 +188,16 @@ td {
   border-bottom: 1px solid #8884;
   white-space: nowrap;
 }
+
+/* Barra de paginación de RecetasPage. */
+.paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.paginacion .activa {
+  font-weight: 700;
+}

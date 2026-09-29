@@ -7,7 +7,7 @@ import {
   eliminarReceta,
   ErrorAPI,
 } from "../api/recetas";
-import type { RecetaDTO } from "../api/types";
+import type { PaginaRecetasDTO, RecetaDTO } from "../api/types";
 
 // Estado del FORMULARIO: los inputs numéricos (tiempo, porciones) se guardan
 // como string, no como number. Un <input type="number"> controlado (Clase 2
@@ -45,6 +45,12 @@ export function RecetasPage() {
   // carga — mismo patrón de useState + useEffect que ListaRecetas en la
   // Clase 3 ("Pidiendo datos a una API con fetch").
   const [recetas, setRecetas] = useState<RecetaDTO[]>([]);
+  // Paginación: "pagina" es la página pedida (base 1); "total" y
+  // "tamanioPagina" vienen del backend en cada respuesta — de ahí sale la
+  // cantidad de páginas. Ver 007-desarrollo-cliente/PAGINACION.md.
+  const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [tamanioPagina, setTamanioPagina] = useState(10);
   const [cargando, setCargando] = useState(true);
   const [errorLista, setErrorLista] = useState<string | null>(null);
 
@@ -62,7 +68,7 @@ export function RecetasPage() {
   // falta volver a llamarla después de crear/editar/eliminar, para que la
   // tabla refleje el cambio sin recargar la página entera.
   //
-  // useCallback(fn, [token]) memoriza esta función: mientras "token" no
+  // useCallback(fn, [token, pagina]) memoriza esta función: mientras "token" no
   // cambie entre renders, cargarRecetas mantiene la MISMA identidad de
   // función (el mismo objeto en memoria). Sin esto, cada render de
   // RecetasPage crearía una función nueva, y el useEffect de abajo (que la
@@ -73,14 +79,23 @@ export function RecetasPage() {
     setCargando(true);
     setErrorLista(null);
     try {
-      const datos = await listarRecetas(token);
-      setRecetas(datos);
+      const datos: PaginaRecetasDTO = await listarRecetas(token, pagina);
+      const paginas = Math.ceil(datos.total / datos.tamanioPagina);
+      if (datos.items.length === 0 && pagina > 1 && paginas >= 1) {
+        // La página pedida quedó vacía (p. ej. se borró la última receta de
+        // la última página): retrocede; el cambio de "pagina" recarga solo.
+        setPagina(paginas);
+        return;
+      }
+      setRecetas(datos.items);
+      setTotal(datos.total);
+      setTamanioPagina(datos.tamanioPagina);
     } catch (e) {
       setErrorLista(e instanceof ErrorAPI ? e.message : "No se pudieron cargar las recetas");
     } finally {
       setCargando(false);
     }
-  }, [token]);
+  }, [token, pagina]);
 
   // Cargar la lista al montar el componente (y de nuevo si "token" llegara a
   // cambiar, aunque en la práctica no pasa — ver el comentario sobre "token"
@@ -178,6 +193,8 @@ export function RecetasPage() {
     }
   }
 
+  const totalPaginas = Math.max(1, Math.ceil(total / tamanioPagina));
+
   return (
     <div className="panel">
       <h1>Productos</h1>
@@ -254,10 +271,14 @@ export function RecetasPage() {
       {/* Tabla: mismo patrón responsive de la Clase 2 ("Tablas con varias
           columnas, responsive") — el wrapper con overflow-x:auto evita que
           las columnas de más rompan el layout en una pantalla angosta. */}
-      {cargando && <p>Cargando recetas...</p>}
+      {/* "Cargando" solo en la primera carga: al cambiar de página la tabla
+          queda montada (con la página anterior) hasta que llegan los datos
+          nuevos. Si se desmontara, la página se acortaría y el navegador
+          subiría el scroll al tope. */}
+      {cargando && recetas.length === 0 && <p>Cargando recetas...</p>}
       {errorLista && <p className="error">{errorLista}</p>}
-      {!cargando && !errorLista && (
-        <div className="tabla-wrapper">
+      {!errorLista && (recetas.length > 0 || !cargando) && (
+        <div className="tabla-wrapper" style={{ opacity: cargando ? 0.6 : 1 }}>
           <table>
             <thead>
               <tr>
@@ -290,6 +311,42 @@ export function RecetasPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Paginación: un botón por página (1..totalPaginas) más Anterior /
+          Siguiente. La página actual queda deshabilitada y marcada. */}
+      {!errorLista && total > 0 && (
+        <nav className="paginacion" aria-label="Paginación de recetas">
+          <button
+            type="button"
+            onClick={() => setPagina(pagina - 1)}
+            disabled={cargando || pagina <= 1}
+          >
+            Anterior
+          </button>
+          {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setPagina(n)}
+              disabled={cargando || n === pagina}
+              aria-current={n === pagina ? "page" : undefined}
+              className={n === pagina ? "activa" : undefined}
+            >
+              {n}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setPagina(pagina + 1)}
+            disabled={cargando || pagina >= totalPaginas}
+          >
+            Siguiente
+          </button>
+          <span>
+            {total} {total === 1 ? "receta" : "recetas"}
+          </span>
+        </nav>
       )}
     </div>
   );

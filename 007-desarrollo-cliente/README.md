@@ -29,7 +29,7 @@ Ver `007a-ejemplo/README.md` para instrucciones de instalación y ejecución. Re
 - `AuthContext` (Context API) para el estado de sesión, con persistencia del token en `localStorage`.
 - Cliente HTTP propio sobre `fetch`, con interfaces de TypeScript que reflejan uno a uno los DTOs de `007a-ejemplo/api` (`RegistroDTO`, `LoginDTO`, `UsuarioDTO`, `RecetaDTO`).
 - Home pide `GET /usuarios/me` y muestra el id y el email del usuario autenticado.
-- Recetas: catálogo con CRUD completo (listar, crear, editar, eliminar) contra `/recetas` — cada receta queda auditada en el backend con quién la creó/modificó y cuándo, sin exponer esos campos al cliente.
+- Recetas: catálogo con CRUD completo (listar paginado, crear, editar, eliminar) contra `/recetas` — cada receta queda auditada en el backend con quién la creó/modificó y cuándo, sin exponer esos campos al cliente.
 - `api/`: API propia en Go (Gin + MongoDB + JWT + bcrypt), misma arquitectura en capas de la Unidad 6, con su propia base de datos (`recetario`) — no comparte cuentas ni datos con `006-go/006b-ejemplo`.
 
 ---

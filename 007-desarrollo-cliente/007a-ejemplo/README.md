@@ -40,6 +40,10 @@ npm run dev
 
 Abrir `http://localhost:5173`. Sin sesión, redirige directo a `/login`; desde ahí, "Registrate" crea una cuenta nueva contra la API y deja a la persona ya logueada en la home, con un header arriba (marca, nav a Inicio/Recetas, usuario + botón de logout) para moverse por el resto de la app.
 
+## Datos de prueba (paginación)
+
+Para cargar 95 recetas ficticias en la base `recetario` desde MongoDB Compass, seguí las instrucciones de [`SEED-RECETAS.md`](../SEED-RECETAS.md).
+
 ## Variables de entorno
 
 `web/.env` (ya commiteado con un default para desarrollo local, no tiene nada sensible):
@@ -90,7 +94,7 @@ Si la API corre en otro host/puerto, cambiar este valor — o crear un `.env.loc
 | `/login` | Público | Formulario de login. Si ya hay sesión, no hay redirect automático desde acá — pero `/` y `/recetas` sí exigen sesión |
 | `/registro` | Público | Formulario de registro (`POST /usuarios/registro`); al confirmar, hace login automático con las mismas credenciales |
 | `/` | Requiere sesión (`RutaProtegida` + `Layout`) | Home: `id` y `email` del usuario autenticado, pedidos con `GET /usuarios/me` + el token guardado |
-| `/recetas` | Requiere sesión (`RutaProtegida` + `Layout`) | Catálogo de recetas: listar, crear, editar y eliminar contra la API real (`GET/POST/PUT/DELETE /recetas`) |
+| `/recetas` | Requiere sesión (`RutaProtegida` + `Layout`) | Catálogo de recetas: listar (paginado de a 10, ver [`PAGINACION.md`](../PAGINACION.md)), crear, editar y eliminar contra la API real (`GET /recetas?pagina=N`, `POST/PUT/DELETE /recetas`) |
 
 El token JWT se guarda en `localStorage` al hacer login, y la sesión persiste entre recargas (`AuthProvider` lo valida contra `GET /usuarios/me` al montar la app). "Cerrar sesión" (en el header) borra el token y redirige a `/login`.
 

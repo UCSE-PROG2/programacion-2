@@ -2,6 +2,7 @@ package receta
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -20,14 +21,21 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-// List responde GET /recetas — devuelve todas las recetas.
+// List responde GET /recetas?pagina=N — devuelve una página de recetas (el
+// tamaño es fijo, ver TamanioPagina) y el total. Sin "pagina" asume la 1.
 func (h *Handler) List(c *gin.Context) {
-	dtos, err := h.service.ListarTodas(c.Request.Context())
+	pagina, err := strconv.Atoi(c.DefaultQuery("pagina", "1"))
+	if err != nil || pagina < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "pagina debe ser un entero >= 1"})
+		return
+	}
+
+	resultado, err := h.service.ListarPagina(c.Request.Context(), pagina)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, dtos)
+	c.JSON(http.StatusOK, resultado)
 }
 
 // GetByID responde GET /recetas/:id.
